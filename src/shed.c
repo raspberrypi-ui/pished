@@ -30,6 +30,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <glib/gstdio.h>
 #include <gtk/gtk.h>
 
+#include "default-bindings.h"
+
 /*----------------------------------------------------------------------------*/
 /* Typedefs and macros                                                        */
 /*----------------------------------------------------------------------------*/
@@ -62,7 +64,8 @@ static GtkWidget *main_dlg;
 /* Flag to indicate window manager in use */
 static wm_type wm;
 
-GtkListStore *ls;
+static GtkWidget *tv;
+static GtkListStore *ls;
 
 /*----------------------------------------------------------------------------*/
 /* Prototypes                                                                 */
@@ -151,13 +154,20 @@ void check_directory (const char *path)
 static void init_config (void)
 {
     ls = (GtkListStore *) gtk_builder_get_object (builder, "ls_test");
-    GtkWidget *tv = (GtkWidget *) gtk_builder_get_object (builder, "shortcuts_tv");
+    tv = (GtkWidget *) gtk_builder_get_object (builder, "shortcuts_tv");
     GtkCellRenderer *trend = gtk_cell_renderer_text_new ();
-    
+
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (tv), -1, "Key", trend, "text", 0, NULL);
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (tv), -1, "Action", trend, "text", 1, NULL);
-    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (tv), -1, "Argument", trend, "text", 2, NULL);
-    
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (tv), -1, "Name", trend, "text", 2, NULL);
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (tv), -1, "Value", trend, "text", 3, NULL);
+
+	for (int i = 0; key_combos[i].binding; i++)
+    {
+		struct key_combos *current = &key_combos[i];
+        gtk_list_store_insert_with_values (ls, NULL, -1, 0, current->binding, 1, current->action, 2,
+            current->attributes[0].name, 3, current->attributes[0].value, -1);
+    }
 }
 
 /*----------------------------------------------------------------------------*/

@@ -8,16 +8,11 @@
       <column type="gchararray"/>
       <!-- column-name Action -->
       <column type="gchararray"/>
-      <!-- column-name Argument -->
+      <!-- column-name Name -->
+      <column type="gchararray"/>
+      <!-- column-name Value -->
       <column type="gchararray"/>
     </columns>
-    <data>
-      <row>
-        <col id="0" translatable="yes">Test key</col>
-        <col id="1" translatable="yes">Test action</col>
-        <col id="2" translatable="yes">Test argument</col>
-      </row>
-    </data>
   </object>
   <object class="GtkWindow" id="main_window">
     <property name="can-focus">False</property>
@@ -33,20 +28,24 @@
         <property name="orientation">vertical</property>
         <property name="spacing">5</property>
         <child>
-          <object class="GtkTreeView" id="shortcuts_tv">
+          <object class="GtkScrolledWindow">
             <property name="visible">True</property>
             <property name="can-focus">True</property>
-            <property name="model">ls_test</property>
-            <property name="enable-search">False</property>
-            <property name="fixed-height-mode">True</property>
-            <property name="show-expanders">False</property>
-            <property name="enable-grid-lines">both</property>
-            <child internal-child="selection">
-              <object class="GtkTreeSelection"/>
+            <property name="shadow-type">in</property>
+            <child>
+              <object class="GtkTreeView" id="shortcuts_tv">
+                <property name="visible">True</property>
+                <property name="can-focus">True</property>
+                <property name="model">ls_test</property>
+                <property name="enable-search">False</property>
+                <property name="fixed-height-mode">True</property>
+                <property name="show-expanders">False</property>
+                <property name="enable-grid-lines">both</property>
+              </object>
             </child>
           </object>
           <packing>
-            <property name="expand">False</property>
+            <property name="expand">True</property>
             <property name="fill">True</property>
             <property name="position">0</property>
           </packing>
