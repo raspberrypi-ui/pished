@@ -377,10 +377,9 @@ static void init_config (void)
 
     GtkCellRenderer *trend = gtk_cell_renderer_text_new ();
 
-    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (tv), -1, "Key", trend, "text", 0, NULL);
-    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (tv), -1, "Action", trend, "text", 1, NULL);
-    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (tv), -1, "Name", trend, "text", 2, NULL);
-    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (tv), -1, "Value", trend, "text", 3, NULL);
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (tv), -1, _("Key"), trend, "text", 0, NULL);
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (tv), -1, _("Action"), trend, "text", 1, NULL);
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (tv), -1, _("Parameter"), trend, "text", 3, NULL);
 
     for (i = 0; i < 4; i++)
         gtk_tree_view_column_set_resizable (gtk_tree_view_get_column (GTK_TREE_VIEW (tv), i), TRUE);
