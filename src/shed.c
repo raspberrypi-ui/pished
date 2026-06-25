@@ -29,6 +29,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <glib/gi18n.h>
 #include <glib/gstdio.h>
 #include <gtk/gtk.h>
+#include <libxml/xpathInternals.h>
 
 #include "default-bindings.h"
 
@@ -51,6 +52,8 @@ typedef enum {
     WM_WAYFIRE,
     WM_LABWC } 
 wm_type;
+
+#define XC(str) ((xmlChar *) str)
 
 /*----------------------------------------------------------------------------*/
 /* Global data                                                                */
@@ -151,6 +154,69 @@ void check_directory (const char *path)
 /* Initial configuration                                                      */
 /*----------------------------------------------------------------------------*/
 
+void read_defaults (void)
+{
+	for (int i = 0; key_combos[i].binding; i++)
+    {
+		struct key_combos *current = &key_combos[i];
+        gtk_list_store_insert_with_values (ls, NULL, -1, 0, current->binding, 1, current->action, 2,
+            current->attributes[0].name, 3, current->attributes[0].value, -1);
+    }
+}
+
+void read_xml (const char *file)
+{
+    xmlDocPtr xDoc;
+    xmlXPathObjectPtr xpathObj;
+    xmlXPathContextPtr xpathCtx;
+    xmlNode *node;
+    xmlAttr *attr;
+    xmlChar *cont;
+    int i;
+    char *key;
+
+    // read in data from XML file
+    xmlInitParser ();
+    LIBXML_TEST_VERSION
+    xDoc = xmlReadFile (file, NULL, XML_PARSE_NOBLANKS);
+    if (xDoc == NULL)
+    {
+        xmlCleanupParser ();
+        return;
+    }
+
+    xpathCtx = xmlXPathNewContext (xDoc);
+    xmlXPathRegisterNs (xpathCtx, XC ("o"), XC ("http://openbox.org/3.4/rc"));
+
+    xpathObj = xmlXPathEvalExpression (XC ("/o:openbox_config/o:keyboard/o:default"), xpathCtx);
+    if (!xmlXPathNodeSetIsEmpty (xpathObj->nodesetval))
+    {
+        read_defaults ();
+    }
+    xmlXPathFreeObject (xpathObj);
+
+    xpathObj = xmlXPathEvalExpression (XC ("/o:openbox_config/o:keyboard/o:keybind"), xpathCtx);
+    if (!xmlXPathNodeSetIsEmpty (xpathObj->nodesetval))
+    {
+        for (i = 0; i < xpathObj->nodesetval->nodeNr; i++)
+        {
+            node = xpathObj->nodesetval->nodeTab[i];
+            for (attr = node->properties; attr; attr = attr->next)
+            {
+                if (!g_strcmp0 ((char *) attr->name, "key"))
+                    key = g_strdup ((char *) attr->children->content);
+            }
+            gtk_list_store_insert_with_values (ls, NULL, -1, 0, key, -1);
+        }
+    }
+    xmlXPathFreeObject (xpathObj);
+
+    // cleanup XML
+    xmlXPathFreeContext (xpathCtx);
+    xmlFreeDoc (xDoc);
+    xmlCleanupParser ();
+}
+
 static void init_config (void)
 {
     ls = (GtkListStore *) gtk_builder_get_object (builder, "ls_test");
@@ -162,12 +228,7 @@ static void init_config (void)
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (tv), -1, "Name", trend, "text", 2, NULL);
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (tv), -1, "Value", trend, "text", 3, NULL);
 
-	for (int i = 0; key_combos[i].binding; i++)
-    {
-		struct key_combos *current = &key_combos[i];
-        gtk_list_store_insert_with_values (ls, NULL, -1, 0, current->binding, 1, current->action, 2,
-            current->attributes[0].name, 3, current->attributes[0].value, -1);
-    }
+    read_xml ("/etc/xdg/labwc/rc.xml");
 }
 
 /*----------------------------------------------------------------------------*/
