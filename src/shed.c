@@ -70,6 +70,7 @@ static wm_type wm;
 static GtkWidget *tv;
 static GtkListStore *ls;
 static GtkTreeModelSort *sorted;
+static GtkTreeIter miter;
 
 /*----------------------------------------------------------------------------*/
 /* Prototypes                                                                 */
@@ -263,6 +264,53 @@ void read_xml (const char *file)
     xmlCleanupParser ();
 }
 
+static void edit_item (GtkWidget *, gpointer user_data)
+{
+    char *str;
+    gtk_tree_model_get (GTK_TREE_MODEL (ls), &miter, 0, &str, -1);
+    printf ("%s\n", str);
+}
+
+static void delete_item (GtkWidget *, gpointer user_data)
+{
+    char *str;
+    gtk_tree_model_get (GTK_TREE_MODEL (ls), &miter, 0, &str, -1);
+    printf ("%s\n", str);
+}
+
+static gboolean tv_button (GtkWidget *wid, GdkEventButton *event, gpointer userdata)
+{
+    GtkWidget *menu, *item;
+    GtkTreeIter iter;
+    GtkTreePath *path;
+
+    if (event->button == 3)
+    {
+        if (gtk_tree_view_get_path_at_pos (GTK_TREE_VIEW (tv), event->x, event->y, &path, NULL, NULL, NULL))
+        {
+            gtk_tree_model_get_iter (GTK_TREE_MODEL (sorted), &iter, path);
+            gtk_tree_model_sort_convert_iter_to_child_iter (sorted, &miter, &iter);
+            gtk_tree_path_free (path);
+
+            menu = gtk_menu_new ();
+
+            item = gtk_menu_item_new_with_label (_("Edit..."));
+            g_signal_connect (item, "activate", G_CALLBACK (edit_item), NULL);
+            gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
+
+            item = gtk_menu_item_new_with_label (_("Delete"));
+            g_signal_connect (item, "activate", G_CALLBACK (delete_item), NULL);
+            gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
+
+            gtk_widget_show_all (menu);
+            gtk_menu_popup_at_pointer (GTK_MENU (menu), gtk_get_current_event ());
+
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
 static void init_config (void)
 {
     char *user_file;
@@ -283,12 +331,12 @@ static void init_config (void)
     for (i = 0; i < 4; i++)
         gtk_tree_view_column_set_resizable (gtk_tree_view_get_column (GTK_TREE_VIEW (tv), i), TRUE);
 
+    g_signal_connect (tv, "button-release-event", G_CALLBACK (tv_button), NULL);
+
     user_file = g_build_filename (g_get_user_config_dir (), "labwc/rc.xml", NULL);
     read_xml ("/etc/xdg/labwc/rc.xml");
     read_xml (user_file);
     g_free (user_file);
-
-    //gtk_tree_view_columns_autosize (GTK_TREE_VIEW (tv));
 }
 
 /*----------------------------------------------------------------------------*/
