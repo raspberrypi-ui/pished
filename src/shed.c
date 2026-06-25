@@ -69,6 +69,7 @@ static wm_type wm;
 
 static GtkWidget *tv;
 static GtkListStore *ls;
+static GtkTreeModelSort *sorted;
 
 /*----------------------------------------------------------------------------*/
 /* Prototypes                                                                 */
@@ -267,6 +268,9 @@ static void init_config (void)
 
     ls = (GtkListStore *) gtk_builder_get_object (builder, "ls_test");
     tv = (GtkWidget *) gtk_builder_get_object (builder, "shortcuts_tv");
+    sorted = (GtkTreeModelSort *) gtk_builder_get_object (builder, "sorted");
+    gtk_tree_sortable_set_sort_column_id (GTK_TREE_SORTABLE (sorted), 0, GTK_SORT_ASCENDING);
+
     GtkCellRenderer *trend = gtk_cell_renderer_text_new ();
 
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (tv), -1, "Key", trend, "text", 0, NULL);
