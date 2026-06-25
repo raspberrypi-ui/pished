@@ -167,11 +167,10 @@ void read_defaults (void)
 void read_xml (const char *file)
 {
     xmlDocPtr xDoc;
-    xmlXPathObjectPtr xpathObj, xpathObj2, xpathObj3;
+    xmlXPathObjectPtr xpathObj, xpathObj2;
     xmlXPathContextPtr xpathCtx;
     xmlNode *node;
     xmlAttr *attr, *attr2;
-    xmlChar *cont;
     int i;
     char *key, *act, *cmd, *arg;
 
@@ -216,17 +215,12 @@ void read_xml (const char *file)
                 for (attr2 = xpathObj2->nodesetval->nodeTab[0]->properties; attr2; attr2 = attr2->next)
                 {
                     if (!g_strcmp0 ((char *) attr2->name, "name"))
-                    {
                         act = g_strdup ((char *) attr2->children->content);
-                        xpathObj3 = xmlXPathNodeEval (xpathObj2->nodesetval->nodeTab[0], XC ("./o:command"), xpathCtx);
-                        if (!xmlXPathNodeSetIsEmpty (xpathObj3->nodesetval))
-                        {
-                            cmd = g_strdup ("command");
-                            cont = xmlNodeGetContent (xpathObj3->nodesetval->nodeTab[0]);
-                            arg = g_strdup ((char *) cont);
-                            xmlFree (cont);
-                        }
-                        xmlXPathFreeObject (xpathObj3);
+                    if (!g_strcmp0 ((char *) attr2->name, "command") || !g_strcmp0 ((char *) attr2->name, "direction")
+                        || !g_strcmp0 ((char *) attr2->name, "menu"))
+                    {
+                        cmd = g_strdup ((char *) attr2->name);
+                        arg = g_strdup ((char *) attr2->children->content);
                     }
                 }
             }
