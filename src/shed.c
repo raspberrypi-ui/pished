@@ -279,23 +279,48 @@ static void edit_item (GtkWidget *, gpointer user_data)
 {
     GtkBuilder *build;
     GtkWidget *wid;
-    char *str;
+    char *key, *act, *name, *param, *str;
 
-    gtk_tree_model_get (GTK_TREE_MODEL (ls), &miter, 0, &str, -1);
+    gtk_tree_model_get (GTK_TREE_MODEL (ls), &miter, 0, &key, 1, &act, 2, &name, 3, &param, -1);
 
     build = gtk_builder_new_from_file (PACKAGE_DATA_DIR "/ui/shed.ui");
     se = (GtkWidget *) gtk_builder_get_object (build, "shedit");
+    gtk_widget_show_all (se);
+
     se_ok = (GtkWidget *) gtk_builder_get_object (build, "btn_ok");
     se_can = (GtkWidget *) gtk_builder_get_object (build, "btn_cancel");
 
     wid = (GtkWidget *) gtk_builder_get_object (build, "lbl_key");
-    gtk_label_set_text (GTK_LABEL (wid), str);
-    g_free (str);
+    gtk_label_set_text (GTK_LABEL (wid), key);
+    g_free (key);
+
+    wid = (GtkWidget *) gtk_builder_get_object (build, "cb_action");
+    gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (wid), act);
+    gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 0);
+    g_free (act);
+
+    if (param)
+    {
+        wid = (GtkWidget *) gtk_builder_get_object (build, "lbl_param");
+        name[0] = g_ascii_toupper (name[0]);
+        str = g_strdup_printf ("%s:", name);
+        gtk_label_set_text (GTK_LABEL (wid), str);
+        g_free (name);
+        g_free (str);
+
+        wid = (GtkWidget *) gtk_builder_get_object (build, "param");
+        gtk_entry_set_text (GTK_ENTRY (wid), param);
+        g_free (param);
+    }
+    else
+    {
+        wid = (GtkWidget *) gtk_builder_get_object (build, "param_box");
+        gtk_widget_hide (wid);
+    }
 
     g_signal_connect ((GObject *) se_ok, "clicked", G_CALLBACK (edit_ok), NULL);
     g_signal_connect ((GObject *) se_can, "clicked", G_CALLBACK (edit_cancel), NULL);
 
-    gtk_widget_show_all (se);
     gtk_window_present (GTK_WINDOW (se));
     g_object_unref (build);
 }
