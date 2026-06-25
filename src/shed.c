@@ -167,13 +167,13 @@ void read_defaults (void)
 void read_xml (const char *file)
 {
     xmlDocPtr xDoc;
-    xmlXPathObjectPtr xpathObj;
+    xmlXPathObjectPtr xpathObj, xpathObj2, xpathObj3;
     xmlXPathContextPtr xpathCtx;
     xmlNode *node;
-    xmlAttr *attr;
+    xmlAttr *attr, *attr2;
     xmlChar *cont;
     int i;
-    char *key;
+    char *key, *act, *cmd, *arg;
 
     // read in data from XML file
     xmlInitParser ();
@@ -200,13 +200,44 @@ void read_xml (const char *file)
     {
         for (i = 0; i < xpathObj->nodesetval->nodeNr; i++)
         {
+            act = NULL;
+            cmd = NULL;
+            arg = NULL;
+
             node = xpathObj->nodesetval->nodeTab[i];
             for (attr = node->properties; attr; attr = attr->next)
             {
                 if (!g_strcmp0 ((char *) attr->name, "key"))
                     key = g_strdup ((char *) attr->children->content);
             }
-            gtk_list_store_insert_with_values (ls, NULL, -1, 0, key, -1);
+            xpathObj2 = xmlXPathNodeEval (node, XC ("./o:action"), xpathCtx);
+            if (!xmlXPathNodeSetIsEmpty (xpathObj2->nodesetval))
+            {
+                for (attr2 = xpathObj2->nodesetval->nodeTab[0]->properties; attr2; attr2 = attr2->next)
+                {
+                    if (!g_strcmp0 ((char *) attr2->name, "name"))
+                    {
+                        act = g_strdup ((char *) attr2->children->content);
+                        xpathObj3 = xmlXPathNodeEval (xpathObj2->nodesetval->nodeTab[0], XC ("./o:command"), xpathCtx);
+                        if (!xmlXPathNodeSetIsEmpty (xpathObj3->nodesetval))
+                        {
+                            cmd = g_strdup ("command");
+                            cont = xmlNodeGetContent (xpathObj3->nodesetval->nodeTab[0]);
+                            arg = g_strdup ((char *) cont);
+                            xmlFree (cont);
+                        }
+                        xmlXPathFreeObject (xpathObj3);
+                    }
+                }
+            }
+            xmlXPathFreeObject (xpathObj2);
+
+            gtk_list_store_insert_with_values (ls, NULL, -1, 0, key, 1, act, 2, cmd, 3, arg, -1);
+
+            g_free (key);
+            g_free (act);
+            g_free (cmd);
+            g_free (arg);
         }
     }
     xmlXPathFreeObject (xpathObj);
