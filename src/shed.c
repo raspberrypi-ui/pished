@@ -167,7 +167,8 @@ void add_or_replace (GtkListStore *ls, const char *key, const char *act, const c
         gtk_tree_model_get (GTK_TREE_MODEL (ls), &iter, 0, &str, -1);
         if (!g_strcmp0 (str, key))
         {
-            gtk_list_store_set (ls, &iter, 0, key, 1, act, 2, nam, 3, val, -1);
+            if (act) gtk_list_store_set (ls, &iter, 0, key, 1, act, 2, nam, 3, val, -1);
+            else gtk_list_store_remove (ls, &iter);
             g_free (str);
             return;
         }
@@ -175,7 +176,7 @@ void add_or_replace (GtkListStore *ls, const char *key, const char *act, const c
         valid = gtk_tree_model_iter_next (GTK_TREE_MODEL (ls), &iter);
     }
 
-    gtk_list_store_insert_with_values (ls, NULL, -1, 0, key, 1, act, 2, nam, 3, val, -1);
+    if (act) gtk_list_store_insert_with_values (ls, NULL, -1, 0, key, 1, act, 2, nam, 3, val, -1);
 }
 
 void read_defaults (void)
@@ -265,6 +266,7 @@ void read_xml (const char *file)
 static void init_config (void)
 {
     char *user_file;
+    int i;
 
     ls = (GtkListStore *) gtk_builder_get_object (builder, "ls_test");
     tv = (GtkWidget *) gtk_builder_get_object (builder, "shortcuts_tv");
@@ -277,6 +279,9 @@ static void init_config (void)
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (tv), -1, "Action", trend, "text", 1, NULL);
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (tv), -1, "Name", trend, "text", 2, NULL);
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (tv), -1, "Value", trend, "text", 3, NULL);
+
+    for (i = 0; i < 4; i++)
+        gtk_tree_view_column_set_resizable (gtk_tree_view_get_column (GTK_TREE_VIEW (tv), i), TRUE);
 
     user_file = g_build_filename (g_get_user_config_dir (), "labwc/rc.xml", NULL);
     read_xml ("/etc/xdg/labwc/rc.xml");
