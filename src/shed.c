@@ -263,6 +263,8 @@ void read_xml (const char *file)
 
 static void init_config (void)
 {
+    char *user_file;
+
     ls = (GtkListStore *) gtk_builder_get_object (builder, "ls_test");
     tv = (GtkWidget *) gtk_builder_get_object (builder, "shortcuts_tv");
     GtkCellRenderer *trend = gtk_cell_renderer_text_new ();
@@ -272,7 +274,10 @@ static void init_config (void)
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (tv), -1, "Name", trend, "text", 2, NULL);
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (tv), -1, "Value", trend, "text", 3, NULL);
 
+    user_file = g_build_filename (g_get_user_config_dir (), "labwc/rc.xml", NULL);
     read_xml ("/etc/xdg/labwc/rc.xml");
+    read_xml (user_file);
+    g_free (user_file);
 
     //gtk_tree_view_columns_autosize (GTK_TREE_VIEW (tv));
 }
