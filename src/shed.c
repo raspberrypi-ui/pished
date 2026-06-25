@@ -67,7 +67,7 @@ static GtkWidget *main_dlg;
 /* Flag to indicate window manager in use */
 static wm_type wm;
 
-static GtkWidget *tv;
+static GtkWidget *tv, *se, *se_ok, *se_can;
 static GtkListStore *ls;
 static GtkTreeModelSort *sorted;
 static GtkTreeIter miter;
@@ -264,11 +264,40 @@ void read_xml (const char *file)
     xmlCleanupParser ();
 }
 
+static void edit_ok (GtkWidget *, gpointer)
+{
+    gtk_widget_destroy (se);
+}
+
+static void edit_cancel (GtkWidget *, gpointer)
+{
+    gtk_widget_destroy (se);
+}
+
+
 static void edit_item (GtkWidget *, gpointer user_data)
 {
+    GtkBuilder *build;
+    GtkWidget *wid;
     char *str;
+
     gtk_tree_model_get (GTK_TREE_MODEL (ls), &miter, 0, &str, -1);
-    printf ("%s\n", str);
+
+    build = gtk_builder_new_from_file (PACKAGE_DATA_DIR "/ui/shed.ui");
+    se = (GtkWidget *) gtk_builder_get_object (build, "shedit");
+    se_ok = (GtkWidget *) gtk_builder_get_object (build, "btn_ok");
+    se_can = (GtkWidget *) gtk_builder_get_object (build, "btn_cancel");
+
+    wid = (GtkWidget *) gtk_builder_get_object (build, "lbl_key");
+    gtk_label_set_text (GTK_LABEL (wid), str);
+    g_free (str);
+
+    g_signal_connect ((GObject *) se_ok, "clicked", G_CALLBACK (edit_ok), NULL);
+    g_signal_connect ((GObject *) se_can, "clicked", G_CALLBACK (edit_cancel), NULL);
+
+    gtk_widget_show_all (se);
+    gtk_window_present (GTK_WINDOW (se));
+    g_object_unref (build);
 }
 
 static void delete_item (GtkWidget *, gpointer user_data)
