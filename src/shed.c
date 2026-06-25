@@ -154,13 +154,35 @@ void check_directory (const char *path)
 /* Initial configuration                                                      */
 /*----------------------------------------------------------------------------*/
 
+void add_or_replace (GtkListStore *ls, const char *key, const char *act, const char *nam, const char *val)
+{
+    GtkTreeIter iter;
+    gboolean valid;
+    char *str;
+
+    valid = gtk_tree_model_get_iter_first (GTK_TREE_MODEL (ls), &iter);
+    while (valid)
+    {
+        gtk_tree_model_get (GTK_TREE_MODEL (ls), &iter, 0, &str, -1);
+        if (!g_strcmp0 (str, key))
+        {
+            gtk_list_store_set (ls, &iter, 0, key, 1, act, 2, nam, 3, val, -1);
+            g_free (str);
+            return;
+        }
+        g_free (str);
+        valid = gtk_tree_model_iter_next (GTK_TREE_MODEL (ls), &iter);
+    }
+
+    gtk_list_store_insert_with_values (ls, NULL, -1, 0, key, 1, act, 2, nam, 3, val, -1);
+}
+
 void read_defaults (void)
 {
 	for (int i = 0; key_combos[i].binding; i++)
     {
 		struct key_combos *current = &key_combos[i];
-        gtk_list_store_insert_with_values (ls, NULL, -1, 0, current->binding, 1, current->action, 2,
-            current->attributes[0].name, 3, current->attributes[0].value, -1);
+        add_or_replace (ls, current->binding, current->action, current->attributes[0].name, current->attributes[0].value);
     }
 }
 
@@ -188,10 +210,7 @@ void read_xml (const char *file)
     xmlXPathRegisterNs (xpathCtx, XC ("o"), XC ("http://openbox.org/3.4/rc"));
 
     xpathObj = xmlXPathEvalExpression (XC ("/o:openbox_config/o:keyboard/o:default"), xpathCtx);
-    if (!xmlXPathNodeSetIsEmpty (xpathObj->nodesetval))
-    {
-        read_defaults ();
-    }
+    if (!xmlXPathNodeSetIsEmpty (xpathObj->nodesetval)) read_defaults ();
     xmlXPathFreeObject (xpathObj);
 
     xpathObj = xmlXPathEvalExpression (XC ("/o:openbox_config/o:keyboard/o:keybind"), xpathCtx);
@@ -226,7 +245,7 @@ void read_xml (const char *file)
             }
             xmlXPathFreeObject (xpathObj2);
 
-            gtk_list_store_insert_with_values (ls, NULL, -1, 0, key, 1, act, 2, cmd, 3, arg, -1);
+            add_or_replace (ls, key, act, cmd, arg);
 
             g_free (key);
             g_free (act);
@@ -254,6 +273,8 @@ static void init_config (void)
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (tv), -1, "Value", trend, "text", 3, NULL);
 
     read_xml ("/etc/xdg/labwc/rc.xml");
+
+    //gtk_tree_view_columns_autosize (GTK_TREE_VIEW (tv));
 }
 
 /*----------------------------------------------------------------------------*/
