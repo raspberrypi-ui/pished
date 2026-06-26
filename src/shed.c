@@ -140,8 +140,9 @@ static GtkWidget *main_dlg;
 static wm_type wm;
 
 static GtkWidget *tv, *se, *se_ok, *se_can, *keyentry;
-static GtkListStore *ls;
+static GtkListStore *ls, *actions;
 static GtkTreeModelSort *sorted;
+static GtkTreeModel *act_sort;
 static GtkTreeIter miter;
 static gboolean keylog = FALSE;
 
@@ -410,7 +411,7 @@ static void show_editor (char *key, char *act, char *name, char *param)
     char *str;
     GtkBuilder *build;
     GtkWidget *wid;
-    int i;
+    GtkTreeIter iter;
 
     build = gtk_builder_new_from_file (PACKAGE_DATA_DIR "/ui/shed.ui");
     se = (GtkWidget *) gtk_builder_get_object (build, "shedit");
@@ -434,12 +435,18 @@ static void show_editor (char *key, char *act, char *name, char *param)
     }
 
     wid = (GtkWidget *) gtk_builder_get_object (build, "cb_action");
-    for (i = 1; action_names[i]; i++)
+    gtk_combo_box_set_model (GTK_COMBO_BOX (wid), GTK_TREE_MODEL (act_sort));
+    gtk_tree_model_get_iter_first (GTK_TREE_MODEL (act_sort), &iter);
+    while (1)
     {
-        gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (wid), action_names[i]);
-        if (!g_strcmp0 (act, action_names[i])) gtk_combo_box_set_active (GTK_COMBO_BOX (wid), i - 1);
+        gtk_tree_model_get (GTK_TREE_MODEL (act_sort), &iter, 0, &str, -1);
+        if (!g_strcmp0 (act ? act : "None", str))
+        {
+            gtk_combo_box_set_active_iter (GTK_COMBO_BOX (wid), &iter);
+        }
+        g_free (str);
+        if (!gtk_tree_model_iter_next (GTK_TREE_MODEL (act_sort), &iter)) break;
     }
-    if (!act) gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 0);
 
     keyentry = (GtkWidget *) gtk_builder_get_object (build, "keys");
     g_signal_connect ((GObject *) keyentry, "key-press-event", G_CALLBACK (keypress), NULL);
@@ -564,6 +571,7 @@ static void new_button (GtkWidget *, gpointer)
 
 static void init_config (void)
 {
+    GtkTreeIter iter;
     char *user_file;
     int i;
 
@@ -578,13 +586,22 @@ static void init_config (void)
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (tv), -1, _("Action"), trend, "text", 1, NULL);
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (tv), -1, _("Parameter"), trend, "text", 3, NULL);
 
-    for (i = 0; i < 4; i++)
+    for (i = 0; i < 3; i++)
         gtk_tree_view_column_set_resizable (gtk_tree_view_get_column (GTK_TREE_VIEW (tv), i), TRUE);
 
     g_signal_connect (tv, "button-release-event", G_CALLBACK (tv_button), NULL);
     g_signal_connect ((GtkWidget *) gtk_builder_get_object (builder, "new_btn"), "clicked", G_CALLBACK (new_button), NULL);
     g_signal_connect ((GtkWidget *) gtk_builder_get_object (builder, "edit_btn"), "clicked", G_CALLBACK (edit_button), NULL);
     g_signal_connect ((GtkWidget *) gtk_builder_get_object (builder, "del_btn"), "clicked", G_CALLBACK (delete_button), NULL);
+
+    actions = gtk_list_store_new (2, G_TYPE_STRING, G_TYPE_STRING);
+    for (i = 1; action_names[i]; i++)
+    {
+        gtk_list_store_append (actions, &iter);
+        gtk_list_store_set (actions, &iter, 0, action_names[i], -1);
+    }
+    act_sort = gtk_tree_model_sort_new_with_model (GTK_TREE_MODEL (actions));
+    gtk_tree_sortable_set_sort_column_id (GTK_TREE_SORTABLE (act_sort), 0, GTK_SORT_ASCENDING);
 
     user_file = g_build_filename (g_get_user_config_dir (), "labwc/rc.xml", NULL);
     read_xml ("/etc/xdg/labwc/rc.xml");
