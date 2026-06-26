@@ -62,22 +62,22 @@ const char *action_names[] = {
 	"Close",
 	"Kill",
 	"Debug",
-	"Execute",
+	"Execute",              // command
 	"Exit",
-	"MoveToEdge",
-	"ToggleSnapToEdge",
-	"SnapToEdge",
-	"GrowToEdge",
-	"ShrinkToEdge",
+	"MoveToEdge",           // direction (lrud) snapWindows
+	"ToggleSnapToEdge",     // direction (lrud + centre)
+	"SnapToEdge",           // direction (lrud + centre)
+	"GrowToEdge",           // direction (lrud)
+	"ShrinkToEdge",         // direction (lrud)
 	"NextWindow",
 	"PreviousWindow",
 	"Reconfigure",
-	"ShowMenu",
-	"ToggleMaximize",
-	"Maximize",
-	"UnMaximize",
+	"ShowMenu",             // menu
+	"ToggleMaximize",       // direction (hv both)
+	"Maximize",             // direction (hv both)
+	"UnMaximize",           // direction (hv both)
 	"ToggleFullscreen",
-	"SetDecorations",
+	"SetDecorations",       // decorations forceSSD
 	"ToggleDecorations",
 	"ToggleAlwaysOnTop",
 	"ToggleAlwaysOnBottom",
@@ -89,25 +89,25 @@ const char *action_names[] = {
 	"Raise",
 	"Lower",
 	"Resize",
-	"ResizeRelative",
-	"MoveTo",
-	"ResizeTo",
+	"ResizeRelative",       // left right up down NOT DIRECTION - separate params
+	"MoveTo",               // x y
+	"ResizeTo",             // width height
 	"MoveToCursor",
-	"MoveRelative",
-	"SendToDesktop",
-	"GoToDesktop",
-	"ToggleSnapToRegion",
-	"SnapToRegion",
+	"MoveRelative",         // x y
+	"SendToDesktop",        // to follow wrap
+	"GoToDesktop",          // to wrap
+	"ToggleSnapToRegion",   // region
+	"SnapToRegion",         // region
 	"UnSnap",
 	"ToggleKeybinds",
-	"FocusOutput",
-	"MoveToOutput",
+	"FocusOutput",          // output direction (lrud) wrap
+	"MoveToOutput",         // output direction (lrud) wrap
 	"FitToOutput",
-	"If",
-	"ForEach",
-	"VirtualOutputAdd",
-	"VirtualOutputRemove",
-	"AutoPlace",
+	"If",                   // !!!!!
+	"ForEach",              // !!!!!
+	"VirtualOutputAdd",     // output_name
+	"VirtualOutputRemove",  // output_remove
+	"AutoPlace",            // policy
 	"ToggleTearing",
 	"Shade",
 	"Unshade",
@@ -121,7 +121,7 @@ const char *action_names[] = {
 	"ToggleMagnify",
 	"ZoomIn",
 	"ZoomOut",
-	"WarpCursor",
+	"WarpCursor",           // to x y
 	"HideCursor",
 	NULL
 };
