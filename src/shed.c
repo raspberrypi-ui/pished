@@ -56,6 +56,77 @@ wm_type;
 
 #define XC(str) ((xmlChar *) str)
 
+const char *action_names[] = {
+	"INVALID",
+	"None",
+	"Close",
+	"Kill",
+	"Debug",
+	"Execute",
+	"Exit",
+	"MoveToEdge",
+	"ToggleSnapToEdge",
+	"SnapToEdge",
+	"GrowToEdge",
+	"ShrinkToEdge",
+	"NextWindow",
+	"PreviousWindow",
+	"Reconfigure",
+	"ShowMenu",
+	"ToggleMaximize",
+	"Maximize",
+	"UnMaximize",
+	"ToggleFullscreen",
+	"SetDecorations",
+	"ToggleDecorations",
+	"ToggleAlwaysOnTop",
+	"ToggleAlwaysOnBottom",
+	"ToggleOmnipresent",
+	"Focus",
+	"Unfocus",
+	"Iconify",
+	"Move",
+	"Raise",
+	"Lower",
+	"Resize",
+	"ResizeRelative",
+	"MoveTo",
+	"ResizeTo",
+	"MoveToCursor",
+	"MoveRelative",
+	"SendToDesktop",
+	"GoToDesktop",
+	"ToggleSnapToRegion",
+	"SnapToRegion",
+	"UnSnap",
+	"ToggleKeybinds",
+	"FocusOutput",
+	"MoveToOutput",
+	"FitToOutput",
+	"If",
+	"ForEach",
+	"VirtualOutputAdd",
+	"VirtualOutputRemove",
+	"AutoPlace",
+	"ToggleTearing",
+	"Shade",
+	"Unshade",
+	"ToggleShade",
+	"EnableScrollWheelEmulation",
+	"DisableScrollWheelEmulation",
+	"ToggleScrollWheelEmulation",
+	"EnableTabletMouseEmulation",
+	"DisableTabletMouseEmulation",
+	"ToggleTabletMouseEmulation",
+	"ToggleMagnify",
+	"ZoomIn",
+	"ZoomOut",
+	"WarpCursor",
+	"HideCursor",
+	NULL
+};
+
+
 /*----------------------------------------------------------------------------*/
 /* Global data                                                                */
 /*----------------------------------------------------------------------------*/
@@ -339,6 +410,7 @@ static void show_editor (char *key, char *act, char *name, char *param)
     char *str;
     GtkBuilder *build;
     GtkWidget *wid;
+    int i;
 
     build = gtk_builder_new_from_file (PACKAGE_DATA_DIR "/ui/shed.ui");
     se = (GtkWidget *) gtk_builder_get_object (build, "shedit");
@@ -351,7 +423,6 @@ static void show_editor (char *key, char *act, char *name, char *param)
     {
         wid = (GtkWidget *) gtk_builder_get_object (build, "lbl_key");
         gtk_label_set_text (GTK_LABEL (wid), key);
-        g_free (key);
 
         wid = (GtkWidget *) gtk_builder_get_object (build, "keys");
         gtk_widget_hide (wid);
@@ -362,13 +433,13 @@ static void show_editor (char *key, char *act, char *name, char *param)
         gtk_widget_hide (wid);
     }
 
-    if (act)
+    wid = (GtkWidget *) gtk_builder_get_object (build, "cb_action");
+    for (i = 1; action_names[i]; i++)
     {
-        wid = (GtkWidget *) gtk_builder_get_object (build, "cb_action");
-        gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (wid), act);
-        gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 0);
-        g_free (act);
+        gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (wid), action_names[i]);
+        if (!g_strcmp0 (act, action_names[i])) gtk_combo_box_set_active (GTK_COMBO_BOX (wid), i - 1);
     }
+    if (!act) gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 0);
 
     keyentry = (GtkWidget *) gtk_builder_get_object (build, "keys");
     g_signal_connect ((GObject *) keyentry, "key-press-event", G_CALLBACK (keypress), NULL);
@@ -377,15 +448,13 @@ static void show_editor (char *key, char *act, char *name, char *param)
     if (param)
     {
         wid = (GtkWidget *) gtk_builder_get_object (build, "lbl_param");
-        name[0] = g_ascii_toupper (name[0]);
         str = g_strdup_printf ("%s:", name);
+        str[0] = g_ascii_toupper (str[0]);
         gtk_label_set_text (GTK_LABEL (wid), str);
-        g_free (name);
         g_free (str);
 
         wid = (GtkWidget *) gtk_builder_get_object (build, "param");
         gtk_entry_set_text (GTK_ENTRY (wid), param);
-        g_free (param);
     }
     else
     {
@@ -406,6 +475,10 @@ static void edit_item (GtkWidget *, gpointer user_data)
 
     gtk_tree_model_get (GTK_TREE_MODEL (ls), &miter, 0, &key, 1, &act, 2, &name, 3, &param, -1);
     show_editor (key, act, name, param);
+    g_free (key);
+    g_free (act);
+    g_free (name);
+    g_free (param);
 }
 
 static void delete_item (GtkWidget *, gpointer user_data)
