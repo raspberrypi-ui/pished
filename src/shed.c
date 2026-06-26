@@ -334,13 +334,11 @@ static gboolean keyrel (GtkWidget *, GdkEventKey *event, gpointer user_data)
     return TRUE;
 }
 
-static void edit_item (GtkWidget *, gpointer user_data)
+static void show_editor (char *key, char *act, char *name, char *param)
 {
+    char *str;
     GtkBuilder *build;
     GtkWidget *wid;
-    char *key, *act, *name, *param, *str;
-
-    gtk_tree_model_get (GTK_TREE_MODEL (ls), &miter, 0, &key, 1, &act, 2, &name, 3, &param, -1);
 
     build = gtk_builder_new_from_file (PACKAGE_DATA_DIR "/ui/shed.ui");
     se = (GtkWidget *) gtk_builder_get_object (build, "shedit");
@@ -349,14 +347,28 @@ static void edit_item (GtkWidget *, gpointer user_data)
     se_ok = (GtkWidget *) gtk_builder_get_object (build, "btn_ok");
     se_can = (GtkWidget *) gtk_builder_get_object (build, "btn_cancel");
 
-    wid = (GtkWidget *) gtk_builder_get_object (build, "lbl_key");
-    gtk_label_set_text (GTK_LABEL (wid), key);
-    g_free (key);
+    if (key)
+    {
+        wid = (GtkWidget *) gtk_builder_get_object (build, "lbl_key");
+        gtk_label_set_text (GTK_LABEL (wid), key);
+        g_free (key);
 
-    wid = (GtkWidget *) gtk_builder_get_object (build, "cb_action");
-    gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (wid), act);
-    gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 0);
-    g_free (act);
+        wid = (GtkWidget *) gtk_builder_get_object (build, "keys");
+        gtk_widget_hide (wid);
+    }
+    else
+    {
+        wid = (GtkWidget *) gtk_builder_get_object (build, "lbl_key");
+        gtk_widget_hide (wid);
+    }
+
+    if (act)
+    {
+        wid = (GtkWidget *) gtk_builder_get_object (build, "cb_action");
+        gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (wid), act);
+        gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 0);
+        g_free (act);
+    }
 
     keyentry = (GtkWidget *) gtk_builder_get_object (build, "keys");
     g_signal_connect ((GObject *) keyentry, "key-press-event", G_CALLBACK (keypress), NULL);
@@ -386,6 +398,14 @@ static void edit_item (GtkWidget *, gpointer user_data)
 
     gtk_window_present (GTK_WINDOW (se));
     g_object_unref (build);
+}
+
+static void edit_item (GtkWidget *, gpointer user_data)
+{
+    char *key, *act, *name, *param;
+
+    gtk_tree_model_get (GTK_TREE_MODEL (ls), &miter, 0, &key, 1, &act, 2, &name, 3, &param, -1);
+    show_editor (key, act, name, param);
 }
 
 static void delete_item (GtkWidget *, gpointer user_data)
@@ -428,6 +448,11 @@ static gboolean tv_button (GtkWidget *wid, GdkEventButton *event, gpointer userd
     return FALSE;
 }
 
+static void new_button (GtkWidget *, gpointer)
+{
+    show_editor (NULL, NULL, NULL, NULL);
+}
+
 static void init_config (void)
 {
     char *user_file;
@@ -448,6 +473,7 @@ static void init_config (void)
         gtk_tree_view_column_set_resizable (gtk_tree_view_get_column (GTK_TREE_VIEW (tv), i), TRUE);
 
     g_signal_connect (tv, "button-release-event", G_CALLBACK (tv_button), NULL);
+    g_signal_connect ((GtkWidget *) gtk_builder_get_object (builder, "new_btn"), "clicked", G_CALLBACK (new_button), NULL);
 
     user_file = g_build_filename (g_get_user_config_dir (), "labwc/rc.xml", NULL);
     read_xml ("/etc/xdg/labwc/rc.xml");
