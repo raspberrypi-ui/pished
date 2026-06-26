@@ -481,11 +481,47 @@ static void edit_item (GtkWidget *, gpointer user_data)
     g_free (param);
 }
 
+static void edit_button (GtkWidget *, gpointer user_data)
+{
+    char *key, *act, *name, *param;
+    GtkTreeSelection *selection;
+    GtkTreeModel *model;
+    GtkTreeIter iter;
+
+    selection = gtk_tree_view_get_selection (GTK_TREE_VIEW (tv));
+    if (selection && gtk_tree_selection_get_selected (selection, &model, &iter))
+    {
+        gtk_tree_model_get (model, &iter, 0, &key, 1, &act, 2, &name, 3, &param, -1);
+        show_editor (key, act, name, param);
+        g_free (key);
+        g_free (act);
+        g_free (name);
+        g_free (param);
+    }
+}
+
 static void delete_item (GtkWidget *, gpointer user_data)
 {
     char *str;
     gtk_tree_model_get (GTK_TREE_MODEL (ls), &miter, 0, &str, -1);
     printf ("%s\n", str);
+    g_free (str);
+}
+
+static void delete_button (GtkWidget *, gpointer user_data)
+{
+    char *str;
+    GtkTreeSelection *selection;
+    GtkTreeModel *model;
+    GtkTreeIter iter;
+
+    selection = gtk_tree_view_get_selection (GTK_TREE_VIEW (tv));
+    if (selection && gtk_tree_selection_get_selected (selection, &model, &iter))
+    {
+        gtk_tree_model_get (model, &iter, 0, &str, -1);
+        printf ("%s\n", str);
+        g_free (str);
+    }
 }
 
 static gboolean tv_button (GtkWidget *wid, GdkEventButton *event, gpointer userdata)
@@ -547,6 +583,8 @@ static void init_config (void)
 
     g_signal_connect (tv, "button-release-event", G_CALLBACK (tv_button), NULL);
     g_signal_connect ((GtkWidget *) gtk_builder_get_object (builder, "new_btn"), "clicked", G_CALLBACK (new_button), NULL);
+    g_signal_connect ((GtkWidget *) gtk_builder_get_object (builder, "edit_btn"), "clicked", G_CALLBACK (edit_button), NULL);
+    g_signal_connect ((GtkWidget *) gtk_builder_get_object (builder, "del_btn"), "clicked", G_CALLBACK (delete_button), NULL);
 
     user_file = g_build_filename (g_get_user_config_dir (), "labwc/rc.xml", NULL);
     read_xml ("/etc/xdg/labwc/rc.xml");
