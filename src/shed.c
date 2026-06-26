@@ -278,27 +278,36 @@ static void edit_cancel (GtkWidget *, gpointer)
 
 static void show_keys_rel (guint keycode, guint mods)
 {
-    char buf[64];
-    char *ptr = buf;
+    char buf[64], *ptr = buf;
 
-    if (mods & 0x04)
-    {
-        sprintf (ptr, "C-");
-        ptr += 2;
-    }
-    if (mods & 0x08)
-    {
-        sprintf (ptr, "A-");
-        ptr += 2;
-    }
-    if (mods & 0x01)
+    if (mods & GDK_SHIFT_MASK && keycode != XKB_KEY_Shift_L && keycode != XKB_KEY_Shift_R)
     {
         sprintf (ptr, "S-");
         ptr += 2;
     }
-    if (mods & 0x4000040)
+    if (mods & GDK_CONTROL_MASK && keycode != XKB_KEY_Control_L && keycode != XKB_KEY_Control_R)
+    {
+        sprintf (ptr, "C-");
+        ptr += 2;
+    }
+    if (mods & GDK_MOD1_MASK && keycode != XKB_KEY_Alt_L && keycode != XKB_KEY_Alt_R)
+    {
+        sprintf (ptr, "A-");
+        ptr += 2;
+    }
+    if (mods & GDK_MOD3_MASK && keycode != XKB_KEY_Hyper_L && keycode != XKB_KEY_Hyper_R)
+    {
+        sprintf (ptr, "H-");
+        ptr += 2;
+    }
+    if (mods & GDK_MOD4_MASK && keycode != XKB_KEY_Super_L && keycode != XKB_KEY_Super_R)
     {
         sprintf (ptr, "W-");
+        ptr += 2;
+    }
+    if (mods & GDK_MOD5_MASK && keycode != XKB_KEY_Meta_L && keycode != XKB_KEY_Meta_R)
+    {
+        sprintf (ptr, "M-");
         ptr += 2;
     }
 
