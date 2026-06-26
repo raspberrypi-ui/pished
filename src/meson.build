@@ -6,7 +6,8 @@ add_global_arguments('-Wno-unused-result', language : 'c')
 
 gtk = dependency ('gtk+-3.0')
 xml = dependency ('libxml-2.0')
-deps = [ gtk, xml ]
+xkbcommon = dependency('xkbcommon')
+deps = [ gtk, xml, xkbcommon ]
 
 if build_plugin
   shared_module(plugin_name, sources, dependencies: deps, install: true,

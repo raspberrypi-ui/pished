@@ -30,6 +30,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <glib/gstdio.h>
 #include <gtk/gtk.h>
 #include <libxml/xpathInternals.h>
+#include <xkbcommon/xkbcommon.h>
 
 #include "default-bindings.h"
 
@@ -67,10 +68,11 @@ static GtkWidget *main_dlg;
 /* Flag to indicate window manager in use */
 static wm_type wm;
 
-static GtkWidget *tv, *se, *se_ok, *se_can;
+static GtkWidget *tv, *se, *se_ok, *se_can, *keyentry;
 static GtkListStore *ls;
 static GtkTreeModelSort *sorted;
 static GtkTreeIter miter;
+static gboolean keylog = FALSE;
 
 /*----------------------------------------------------------------------------*/
 /* Prototypes                                                                 */
@@ -274,6 +276,54 @@ static void edit_cancel (GtkWidget *, gpointer)
     gtk_widget_destroy (se);
 }
 
+static void show_keys_rel (guint keycode, guint mods)
+{
+    char buf[64];
+    char *ptr = buf;
+
+    if (mods & 0x04)
+    {
+        sprintf (ptr, "C-");
+        ptr += 2;
+    }
+    if (mods & 0x08)
+    {
+        sprintf (ptr, "A-");
+        ptr += 2;
+    }
+    if (mods & 0x01)
+    {
+        sprintf (ptr, "S-");
+        ptr += 2;
+    }
+    if (mods & 0x4000040)
+    {
+        sprintf (ptr, "W-");
+        ptr += 2;
+    }
+
+    xkb_keysym_get_name (keycode, ptr, sizeof (buf) - (ptr - buf));
+
+    gtk_entry_set_text (GTK_ENTRY (keyentry), buf);
+}
+
+static gboolean keypress (GtkWidget *, GdkEventKey *event, gpointer user_data)
+{
+    //printf ("key press %d %x %d %d\n", event->keyval, event->state, event->hardware_keycode, event->is_modifier);
+    keylog = TRUE;
+    return TRUE;
+}
+
+static gboolean keyrel (GtkWidget *, GdkEventKey *event, gpointer user_data)
+{
+    if (keylog)
+    {
+        //printf ("key release %d %x %d %d\n", event->keyval, event->state, event->hardware_keycode, event->is_modifier);
+        show_keys_rel (event->keyval, event->state); 
+        keylog = FALSE;
+    }
+    return TRUE;
+}
 
 static void edit_item (GtkWidget *, gpointer user_data)
 {
@@ -298,6 +348,10 @@ static void edit_item (GtkWidget *, gpointer user_data)
     gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (wid), act);
     gtk_combo_box_set_active (GTK_COMBO_BOX (wid), 0);
     g_free (act);
+
+    keyentry = (GtkWidget *) gtk_builder_get_object (build, "keys");
+    g_signal_connect ((GObject *) keyentry, "key-press-event", G_CALLBACK (keypress), NULL);
+    g_signal_connect ((GObject *) keyentry, "key-release-event", G_CALLBACK (keyrel), NULL);
 
     if (param)
     {
