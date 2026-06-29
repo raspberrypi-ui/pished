@@ -46,8 +46,6 @@ extern const char *dgetfixt (const char *domain, const char *msgctxid);
 #define C_(a,b) dgetfixt(GETTEXT_PACKAGE,a"\004"b)
 #endif
 
-#define SUDO_PREFIX "env SUDO_ASKPASS=/usr/bin/sudopwd sudo -A "
-
 typedef enum {
     WM_OPENBOX,
     WM_WAYFIRE,
@@ -153,8 +151,8 @@ static gboolean keylog = FALSE;
 static void check_directory (const char *path);
 static void read_xml (const char *file);
 static void read_defaults (void);
-static void add_or_replace (GtkListStore *ls, const char *key, const char *act, const char *nam, const char *val);
-static void write_xml (char *key, char *act, char *name, char *param);
+static void add_or_replace (GtkListStore *ls, const char *key, const char *act, const char *name, const char *param);
+static void write_xml (const char *key, const char *act, const char *name, const char *param);
 static void reload_bindings (void);
 static void show_editor (char *key, char *act, char *name, char *param);
 static void edit_ok (GtkWidget *, gpointer);
@@ -274,7 +272,7 @@ static void read_defaults (void)
     }
 }
 
-static void add_or_replace (GtkListStore *ls, const char *key, const char *act, const char *nam, const char *val)
+static void add_or_replace (GtkListStore *ls, const char *key, const char *act, const char *name, const char *param)
 {
     GtkTreeIter iter;
     gboolean valid;
@@ -286,7 +284,7 @@ static void add_or_replace (GtkListStore *ls, const char *key, const char *act, 
         gtk_tree_model_get (GTK_TREE_MODEL (ls), &iter, 0, &str, -1);
         if (!g_strcmp0 (str, key))
         {
-            if (act) gtk_list_store_set (ls, &iter, 0, key, 1, act, 2, nam, 3, val, -1);
+            if (act) gtk_list_store_set (ls, &iter, 0, key, 1, act, 2, name, 3, param, -1);
             else gtk_list_store_remove (ls, &iter);
             g_free (str);
             return;
@@ -295,14 +293,14 @@ static void add_or_replace (GtkListStore *ls, const char *key, const char *act, 
         valid = gtk_tree_model_iter_next (GTK_TREE_MODEL (ls), &iter);
     }
 
-    if (act) gtk_list_store_insert_with_values (ls, NULL, -1, 0, key, 1, act, 2, nam, 3, val, -1);
+    if (act) gtk_list_store_insert_with_values (ls, NULL, -1, 0, key, 1, act, 2, name, 3, param, -1);
 }
 
 /*----------------------------------------------------------------------------*/
 /* Write out bindings                                                         */
 /*----------------------------------------------------------------------------*/
 
-static void write_xml (char *key, char *act, char *name, char *param)
+static void write_xml (const char *key, const char *act, const char *name, const char *param)
 {
     char *user_file, *cptr;
     int i;
@@ -467,8 +465,8 @@ static void show_editor (char *key, char *act, char *name, char *param)
 
 static void edit_ok (GtkWidget *, gpointer)
 {
-    const char *key;
-    char *act, *name, *param;
+    const char *key, *param;
+    char *act, *name;
     GtkTreeIter iter;
 
     if (gtk_widget_is_visible (keyentry)) key = gtk_entry_get_text (GTK_ENTRY (keyentry));
