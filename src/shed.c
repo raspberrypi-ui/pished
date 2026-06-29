@@ -415,6 +415,18 @@ void write_xml (char *key, char *act, char *name, char *param)
     g_free (user_file);
 }
 
+static void reload_bindings (void)
+{
+    gtk_list_store_clear (ls);
+
+    char *user_file = g_build_filename (g_get_user_config_dir (), "labwc/rc.xml", NULL);
+    read_xml ("/etc/xdg/labwc/rc.xml");
+    read_xml (user_file);
+    g_free (user_file);
+
+    system ("labwc --reconfigure");
+}
+
 static void edit_ok (GtkWidget *, gpointer)
 {
     const char *key;
@@ -452,13 +464,7 @@ static void edit_ok (GtkWidget *, gpointer)
 
     gtk_widget_destroy (se);
 
-    gtk_list_store_clear (ls);
-
-    char *user_file = g_build_filename (g_get_user_config_dir (), "labwc/rc.xml", NULL);
-    read_xml ("/etc/xdg/labwc/rc.xml");
-    read_xml (user_file);
-    g_free (user_file);
-
+    reload_bindings ();
 }
 
 static void edit_cancel (GtkWidget *, gpointer)
@@ -622,8 +628,11 @@ static void delete_item (GtkWidget *, gpointer user_data)
 {
     char *str;
     gtk_tree_model_get (GTK_TREE_MODEL (ls), &miter, 0, &str, -1);
-    printf ("%s\n", str);
+
+    write_xml (str, NULL, NULL, NULL);
     g_free (str);
+
+    reload_bindings ();
 }
 
 static void delete_button (GtkWidget *, gpointer user_data)
@@ -637,8 +646,10 @@ static void delete_button (GtkWidget *, gpointer user_data)
     if (selection && gtk_tree_selection_get_selected (selection, &model, &iter))
     {
         gtk_tree_model_get (model, &iter, 0, &str, -1);
-        printf ("%s\n", str);
+        write_xml (str, NULL, NULL, NULL);
         g_free (str);
+
+        reload_bindings ();
     }
 }
 
