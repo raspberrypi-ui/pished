@@ -150,6 +150,25 @@ static gboolean keylog = FALSE;
 /* Prototypes                                                                 */
 /*----------------------------------------------------------------------------*/
 
+static void check_directory (const char *path);
+static void read_xml (const char *file);
+static void read_defaults (void);
+static void add_or_replace (GtkListStore *ls, const char *key, const char *act, const char *nam, const char *val);
+static void write_xml (char *key, char *act, char *name, char *param);
+static void reload_bindings (void);
+static void show_editor (char *key, char *act, char *name, char *param);
+static void edit_ok (GtkWidget *, gpointer);
+static void edit_cancel (GtkWidget *, gpointer);
+static void action_changed (GtkComboBox *cb, gpointer);
+static gboolean keypress (GtkWidget *, GdkEventKey *event, gpointer);
+static gboolean keyrel (GtkWidget *, GdkEventKey *event, gpointer);
+static void show_keystring (guint keycode, guint mods);
+static void new_button (GtkWidget *, gpointer);
+static void edit_button (GtkWidget *, gpointer);
+static void delete_button (GtkWidget *, gpointer);
+static gboolean tv_button (GtkWidget *wid, GdkEventButton *event, gpointer);
+static void edit_item (GtkWidget *, gpointer);
+static void delete_item (GtkWidget *, gpointer);
 static void init_config (void);
 
 /*----------------------------------------------------------------------------*/
@@ -160,66 +179,7 @@ static void init_config (void);
 /* Helpers                                                                    */
 /*----------------------------------------------------------------------------*/
 
-int vsystem (const char *fmt, ...)
-{
-    char *cmdline;
-    int res;
-
-    va_list arg;
-    va_start (arg, fmt);
-    g_vasprintf (&cmdline, fmt, arg);
-    va_end (arg);
-    res = system (cmdline);
-    g_free (cmdline);
-    return res;
-}
-
-char *get_string (char *cmd)
-{
-    char *line = NULL, *res = NULL;
-    size_t len = 0;
-    FILE *fp = popen (cmd, "r");
-
-    if (fp == NULL) return g_strdup ("");
-    if (getline (&line, &len, fp) > 0)
-    {
-        res = line;
-        while (*res++) if (g_ascii_isspace (*res)) *res = 0;
-        res = g_strdup (line);
-    }
-    pclose (fp);
-    g_free (line);
-    return res ? res : g_strdup ("");
-}
-
-char *get_quoted_string (char *cmd)
-{
-    char *line = NULL, *res = NULL;
-    size_t len = 0;
-    FILE *fp = popen (cmd, "r");
-
-    if (fp == NULL) return g_strdup ("");
-    if (getline (&line, &len, fp) > 0)
-    {
-        res = line;
-        while (*res++) if (*res == '\'') *res = 0;
-        res = g_strdup (line + 1);
-    }
-    pclose (fp);
-    g_free (line);
-    return res ? res : g_strdup ("");
-}
-
-char *rgba_to_gdk_color_string (GdkRGBA *col)
-{
-    int r, g, b;
-    r = col->red * 255;
-    g = col->green * 255;
-    b = col->blue * 255;
-    return g_strdup_printf ("#%02X%02X%02X", r, g, b);
-}
-
-void check_directory (const char *path)
+static void check_directory (const char *path)
 {
     char *dir = g_path_get_dirname (path);
     g_mkdir_with_parents (dir, S_IRUSR | S_IWUSR | S_IXUSR);
@@ -227,43 +187,10 @@ void check_directory (const char *path)
 }
 
 /*----------------------------------------------------------------------------*/
-/* Initial configuration                                                      */
+/* Read in current bindings                                                   */
 /*----------------------------------------------------------------------------*/
 
-void add_or_replace (GtkListStore *ls, const char *key, const char *act, const char *nam, const char *val)
-{
-    GtkTreeIter iter;
-    gboolean valid;
-    char *str;
-
-    valid = gtk_tree_model_get_iter_first (GTK_TREE_MODEL (ls), &iter);
-    while (valid)
-    {
-        gtk_tree_model_get (GTK_TREE_MODEL (ls), &iter, 0, &str, -1);
-        if (!g_strcmp0 (str, key))
-        {
-            if (act) gtk_list_store_set (ls, &iter, 0, key, 1, act, 2, nam, 3, val, -1);
-            else gtk_list_store_remove (ls, &iter);
-            g_free (str);
-            return;
-        }
-        g_free (str);
-        valid = gtk_tree_model_iter_next (GTK_TREE_MODEL (ls), &iter);
-    }
-
-    if (act) gtk_list_store_insert_with_values (ls, NULL, -1, 0, key, 1, act, 2, nam, 3, val, -1);
-}
-
-void read_defaults (void)
-{
-	for (int i = 0; key_combos[i].binding; i++)
-    {
-		struct key_combos *current = &key_combos[i];
-        add_or_replace (ls, current->binding, current->action, current->attributes[0].name, current->attributes[0].value);
-    }
-}
-
-void read_xml (const char *file)
+static void read_xml (const char *file)
 {
     xmlDocPtr xDoc;
     xmlXPathObjectPtr xpathObj, xpathObj2;
@@ -338,7 +265,44 @@ void read_xml (const char *file)
     xmlCleanupParser ();
 }
 
-void write_xml (char *key, char *act, char *name, char *param)
+static void read_defaults (void)
+{
+	for (int i = 0; key_combos[i].binding; i++)
+    {
+		struct key_combos *current = &key_combos[i];
+        add_or_replace (ls, current->binding, current->action, current->attributes[0].name, current->attributes[0].value);
+    }
+}
+
+static void add_or_replace (GtkListStore *ls, const char *key, const char *act, const char *nam, const char *val)
+{
+    GtkTreeIter iter;
+    gboolean valid;
+    char *str;
+
+    valid = gtk_tree_model_get_iter_first (GTK_TREE_MODEL (ls), &iter);
+    while (valid)
+    {
+        gtk_tree_model_get (GTK_TREE_MODEL (ls), &iter, 0, &str, -1);
+        if (!g_strcmp0 (str, key))
+        {
+            if (act) gtk_list_store_set (ls, &iter, 0, key, 1, act, 2, nam, 3, val, -1);
+            else gtk_list_store_remove (ls, &iter);
+            g_free (str);
+            return;
+        }
+        g_free (str);
+        valid = gtk_tree_model_iter_next (GTK_TREE_MODEL (ls), &iter);
+    }
+
+    if (act) gtk_list_store_insert_with_values (ls, NULL, -1, 0, key, 1, act, 2, nam, 3, val, -1);
+}
+
+/*----------------------------------------------------------------------------*/
+/* Write out bindings                                                         */
+/*----------------------------------------------------------------------------*/
+
+static void write_xml (char *key, char *act, char *name, char *param)
 {
     char *user_file, *cptr;
     int i;
@@ -348,6 +312,7 @@ void write_xml (char *key, char *act, char *name, char *param)
     xmlNodePtr root, knode, cur_node;
 
     user_file = g_build_filename (g_get_user_config_dir (), "labwc/rc.xml", NULL);
+    check_directory (user_file);
 
     // read in data from XML file
     xmlInitParser ();
@@ -431,122 +396,9 @@ static void reload_bindings (void)
     system ("labwc --reconfigure");
 }
 
-static void edit_ok (GtkWidget *, gpointer)
-{
-    const char *key;
-    char *act, *name, *param;
-    GtkTreeIter iter;
-
-    if (gtk_widget_is_visible (keyentry)) key = gtk_entry_get_text (GTK_ENTRY (keyentry));
-    else key = gtk_label_get_text (GTK_LABEL (keylabel));
-
-    gtk_combo_box_get_active_iter (GTK_COMBO_BOX (actcb), &iter);
-    gtk_tree_model_get (GTK_TREE_MODEL (act_sort), &iter, 0, &act, -1);
-    if (!g_strcmp0 (act, "None"))
-    {
-        g_free (act);
-        act = NULL;
-    }
-
-    if (gtk_widget_is_visible (pbox))
-    {
-        name = g_strdup (gtk_label_get_text (GTK_LABEL (paramlbl)));
-        name[0] = g_ascii_tolower (name[0]);
-        name[strlen (name) - 1] = 0;
-        param = gtk_entry_get_text (GTK_ENTRY (paramentry));
-    }
-    else
-    {
-        name = NULL;
-        param = NULL;
-    }
-
-    write_xml (key, act, name, param);
-
-    if (act) g_free (act);
-    if (name) g_free (name);
-
-    gtk_widget_destroy (se);
-
-    reload_bindings ();
-}
-
-static void edit_cancel (GtkWidget *, gpointer)
-{
-    gtk_widget_destroy (se);
-}
-
-static void show_keys_rel (guint keycode, guint mods)
-{
-    char buf[64], *ptr = buf;
-
-    if (mods & GDK_SHIFT_MASK && keycode != XKB_KEY_Shift_L && keycode != XKB_KEY_Shift_R)
-    {
-        sprintf (ptr, "S-");
-        ptr += 2;
-    }
-    if (mods & GDK_CONTROL_MASK && keycode != XKB_KEY_Control_L && keycode != XKB_KEY_Control_R)
-    {
-        sprintf (ptr, "C-");
-        ptr += 2;
-    }
-    if (mods & GDK_MOD1_MASK && keycode != XKB_KEY_Alt_L && keycode != XKB_KEY_Alt_R)
-    {
-        sprintf (ptr, "A-");
-        ptr += 2;
-    }
-    if (mods & GDK_MOD3_MASK && keycode != XKB_KEY_Hyper_L && keycode != XKB_KEY_Hyper_R)
-    {
-        sprintf (ptr, "H-");
-        ptr += 2;
-    }
-    if (mods & GDK_MOD4_MASK && keycode != XKB_KEY_Super_L && keycode != XKB_KEY_Super_R)
-    {
-        sprintf (ptr, "W-");
-        ptr += 2;
-    }
-    if (mods & GDK_MOD5_MASK && keycode != XKB_KEY_Meta_L && keycode != XKB_KEY_Meta_R)
-    {
-        sprintf (ptr, "M-");
-        ptr += 2;
-    }
-
-    xkb_keysym_get_name (keycode, ptr, sizeof (buf) - (ptr - buf));
-
-    gtk_entry_set_text (GTK_ENTRY (keyentry), buf);
-}
-
-static gboolean keypress (GtkWidget *, GdkEventKey *event, gpointer user_data)
-{
-    keylog = TRUE;
-    return TRUE;
-}
-
-static gboolean keyrel (GtkWidget *, GdkEventKey *event, gpointer user_data)
-{
-    if (keylog)
-    {
-        show_keys_rel (event->keyval, event->state); 
-        keylog = FALSE;
-    }
-    return TRUE;
-}
-
-static void action_changed (GtkComboBox *cb, gpointer)
-{
-    const char *act;
-    GtkTreeIter iter;
-
-    gtk_combo_box_get_active_iter (GTK_COMBO_BOX (actcb), &iter);
-    gtk_tree_model_get (GTK_TREE_MODEL (act_sort), &iter, 0, &act, -1);
-    if (!g_strcmp0 (act, "Execute"))
-    {
-        gtk_label_set_text (GTK_LABEL (paramlbl), "Command:");
-        gtk_entry_set_text (GTK_ENTRY (paramentry), "");
-        gtk_widget_show (pbox);
-    }
-    else gtk_widget_hide (pbox);
-}
+/*----------------------------------------------------------------------------*/
+/* Binding editor window                                                      */
+/*----------------------------------------------------------------------------*/
 
 static void show_editor (char *key, char *act, char *name, char *param)
 {
@@ -613,20 +465,133 @@ static void show_editor (char *key, char *act, char *name, char *param)
     g_object_unref (build);
 }
 
-static void edit_item (GtkWidget *, gpointer user_data)
+static void edit_ok (GtkWidget *, gpointer)
 {
-    char *key, *act, *name, *param;
+    const char *key;
+    char *act, *name, *param;
+    GtkTreeIter iter;
 
-    gtk_tree_model_get (GTK_TREE_MODEL (ls), &miter, 0, &key, 1, &act, 2, &name, 3, &param, -1);
-    show_editor (key, act, name, param);
+    if (gtk_widget_is_visible (keyentry)) key = gtk_entry_get_text (GTK_ENTRY (keyentry));
+    else key = gtk_label_get_text (GTK_LABEL (keylabel));
 
-    g_free (key);
-    g_free (act);
-    g_free (name);
-    g_free (param);
+    gtk_combo_box_get_active_iter (GTK_COMBO_BOX (actcb), &iter);
+    gtk_tree_model_get (GTK_TREE_MODEL (act_sort), &iter, 0, &act, -1);
+    if (!g_strcmp0 (act, "None"))
+    {
+        g_free (act);
+        act = NULL;
+    }
+
+    if (gtk_widget_is_visible (pbox))
+    {
+        name = g_strdup (gtk_label_get_text (GTK_LABEL (paramlbl)));
+        name[0] = g_ascii_tolower (name[0]);
+        name[strlen (name) - 1] = 0;
+        param = gtk_entry_get_text (GTK_ENTRY (paramentry));
+    }
+    else
+    {
+        name = NULL;
+        param = NULL;
+    }
+
+    write_xml (key, act, name, param);
+
+    if (act) g_free (act);
+    if (name) g_free (name);
+
+    gtk_widget_destroy (se);
+
+    reload_bindings ();
 }
 
-static void edit_button (GtkWidget *, gpointer user_data)
+static void edit_cancel (GtkWidget *, gpointer)
+{
+    gtk_widget_destroy (se);
+}
+
+static void action_changed (GtkComboBox *cb, gpointer)
+{
+    const char *act;
+    GtkTreeIter iter;
+
+    gtk_combo_box_get_active_iter (GTK_COMBO_BOX (actcb), &iter);
+    gtk_tree_model_get (GTK_TREE_MODEL (act_sort), &iter, 0, &act, -1);
+    if (!g_strcmp0 (act, "Execute"))
+    {
+        gtk_label_set_text (GTK_LABEL (paramlbl), "Command:");
+        gtk_entry_set_text (GTK_ENTRY (paramentry), "");
+        gtk_widget_show (pbox);
+    }
+    else gtk_widget_hide (pbox);
+}
+
+static gboolean keypress (GtkWidget *, GdkEventKey *event, gpointer)
+{
+    keylog = TRUE;
+    return TRUE;
+}
+
+static gboolean keyrel (GtkWidget *, GdkEventKey *event, gpointer)
+{
+    if (keylog)
+    {
+        show_keystring (event->keyval, event->state); 
+        keylog = FALSE;
+    }
+    return TRUE;
+}
+
+static void show_keystring (guint keycode, guint mods)
+{
+    char buf[64], *ptr = buf;
+
+    if (mods & GDK_SHIFT_MASK && keycode != XKB_KEY_Shift_L && keycode != XKB_KEY_Shift_R)
+    {
+        sprintf (ptr, "S-");
+        ptr += 2;
+    }
+    if (mods & GDK_CONTROL_MASK && keycode != XKB_KEY_Control_L && keycode != XKB_KEY_Control_R)
+    {
+        sprintf (ptr, "C-");
+        ptr += 2;
+    }
+    if (mods & GDK_MOD1_MASK && keycode != XKB_KEY_Alt_L && keycode != XKB_KEY_Alt_R)
+    {
+        sprintf (ptr, "A-");
+        ptr += 2;
+    }
+    if (mods & GDK_MOD3_MASK && keycode != XKB_KEY_Hyper_L && keycode != XKB_KEY_Hyper_R)
+    {
+        sprintf (ptr, "H-");
+        ptr += 2;
+    }
+    if (mods & GDK_MOD4_MASK && keycode != XKB_KEY_Super_L && keycode != XKB_KEY_Super_R)
+    {
+        sprintf (ptr, "W-");
+        ptr += 2;
+    }
+    if (mods & GDK_MOD5_MASK && keycode != XKB_KEY_Meta_L && keycode != XKB_KEY_Meta_R)
+    {
+        sprintf (ptr, "M-");
+        ptr += 2;
+    }
+
+    xkb_keysym_get_name (keycode, ptr, sizeof (buf) - (ptr - buf));
+
+    gtk_entry_set_text (GTK_ENTRY (keyentry), buf);
+}
+
+/*----------------------------------------------------------------------------*/
+/* Table and button handlers                                                  */
+/*----------------------------------------------------------------------------*/
+
+static void new_button (GtkWidget *, gpointer)
+{
+    show_editor (NULL, NULL, NULL, NULL);
+}
+
+static void edit_button (GtkWidget *, gpointer)
 {
     char *key, *act, *name, *param;
     GtkTreeSelection *selection;
@@ -646,18 +611,7 @@ static void edit_button (GtkWidget *, gpointer user_data)
     }
 }
 
-static void delete_item (GtkWidget *, gpointer user_data)
-{
-    char *key;
-    gtk_tree_model_get (GTK_TREE_MODEL (ls), &miter, 0, &key, -1);
-
-    write_xml (key, NULL, NULL, NULL);
-    g_free (key);
-
-    reload_bindings ();
-}
-
-static void delete_button (GtkWidget *, gpointer user_data)
+static void delete_button (GtkWidget *, gpointer)
 {
     char *key;
     GtkTreeSelection *selection;
@@ -675,7 +629,7 @@ static void delete_button (GtkWidget *, gpointer user_data)
     }
 }
 
-static gboolean tv_button (GtkWidget *wid, GdkEventButton *event, gpointer userdata)
+static gboolean tv_button (GtkWidget *wid, GdkEventButton *event, gpointer)
 {
     GtkWidget *menu, *item;
     GtkTreeIter iter;
@@ -690,6 +644,10 @@ static gboolean tv_button (GtkWidget *wid, GdkEventButton *event, gpointer userd
             gtk_tree_path_free (path);
 
             menu = gtk_menu_new ();
+
+            item = gtk_menu_item_new_with_label (_("New..."));
+            g_signal_connect (item, "activate", G_CALLBACK (new_button), NULL);
+            gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
 
             item = gtk_menu_item_new_with_label (_("Edit..."));
             g_signal_connect (item, "activate", G_CALLBACK (edit_item), NULL);
@@ -708,10 +666,33 @@ static gboolean tv_button (GtkWidget *wid, GdkEventButton *event, gpointer userd
     return FALSE;
 }
 
-static void new_button (GtkWidget *, gpointer)
+static void edit_item (GtkWidget *, gpointer)
 {
-    show_editor (NULL, NULL, NULL, NULL);
+    char *key, *act, *name, *param;
+
+    gtk_tree_model_get (GTK_TREE_MODEL (ls), &miter, 0, &key, 1, &act, 2, &name, 3, &param, -1);
+    show_editor (key, act, name, param);
+
+    g_free (key);
+    g_free (act);
+    g_free (name);
+    g_free (param);
 }
+
+static void delete_item (GtkWidget *, gpointer)
+{
+    char *key;
+    gtk_tree_model_get (GTK_TREE_MODEL (ls), &miter, 0, &key, -1);
+
+    write_xml (key, NULL, NULL, NULL);
+    g_free (key);
+
+    reload_bindings ();
+}
+
+/*----------------------------------------------------------------------------*/
+/* Page initialisation                                                        */
+/*----------------------------------------------------------------------------*/
 
 static void init_config (void)
 {
