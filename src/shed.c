@@ -343,8 +343,8 @@ void write_xml (char *key, char *act, char *name, char *param)
     char *user_file, *cptr;
     xmlDocPtr xDoc;
     xmlXPathContextPtr xpathCtx;
-    xmlXPathObjectPtr xpathObj;
-    xmlNodePtr root, tnode, cur_node;
+    xmlXPathObjectPtr xpathObj, xpathObj2;
+    xmlNodePtr root, knode, cur_node;
 
     user_file = g_build_filename (g_get_user_config_dir (), "labwc/rc.xml", NULL);
 
@@ -373,29 +373,38 @@ void write_xml (char *key, char *act, char *name, char *param)
 
     xpathObj = xmlXPathEvalExpression (XC ("/o:openbox_config/o:keyboard"), xpathCtx);
     if (xmlXPathNodeSetIsEmpty (xpathObj->nodesetval))
-        tnode = xmlNewChild (root, NULL, XC ("keyboard"), NULL);
+        knode = xmlNewChild (root, NULL, XC ("keyboard"), NULL);
     else
-        tnode = xpathObj->nodesetval->nodeTab[0];
+        knode = xpathObj->nodesetval->nodeTab[0];
     xmlXPathFreeObject (xpathObj);
 
-    // create or update relevant node with new values
+    // find an existing node for this binding, or create one
     cptr = g_strdup_printf ("/o:openbox_config/o:keyboard/o:keybind[@key = '%s']", key);
     xpathObj = xmlXPathEvalExpression (XC (cptr), xpathCtx);
     g_free (cptr);
-
     if (xmlXPathNodeSetIsEmpty (xpathObj->nodesetval))
-        cur_node = xmlNewChild (tnode, NULL, XC ("keybind"), NULL);
-    else
-        cur_node = xpathObj->nodesetval->nodeTab[0];
+    {
+        cur_node = xmlNewChild (knode, NULL, XC ("keybind"), NULL);
+        xmlSetProp (cur_node, XC ("key"), XC (key));
+    }
+    else cur_node = xpathObj->nodesetval->nodeTab[0];
 
-    xmlSetProp (cur_node, XC ("key"), XC (key));
+    // delete any existing action node
+    xpathObj2 = xmlXPathNodeEval (cur_node, XC ("./o:action"), xpathCtx);
+    if (!xmlXPathNodeSetIsEmpty (xpathObj2->nodesetval))
+    {
+        xmlUnlinkNode (xpathObj2->nodesetval->nodeTab[0]);
+        xmlFreeNode (xpathObj2->nodesetval->nodeTab[0]);
+    }
+    xmlXPathFreeObject (xpathObj2);
+
+    // create a new action node
     if (act)
     {
         cur_node = xmlNewChild (cur_node, NULL, XC ("action"), NULL);
         xmlSetProp (cur_node, XC ("name"), XC (act));
         if (name) xmlSetProp (cur_node, XC (name), XC (param));
     }
-    xmlXPathFreeObject (xpathObj);
 
     // cleanup XML
     xmlXPathFreeContext (xpathCtx);
@@ -417,6 +426,11 @@ static void edit_ok (GtkWidget *, gpointer)
 
     gtk_combo_box_get_active_iter (GTK_COMBO_BOX (actcb), &iter);
     gtk_tree_model_get (GTK_TREE_MODEL (act_sort), &iter, 0, &act, -1);
+    if (!g_strcmp0 (act, "None"))
+    {
+        g_free (act);
+        act = NULL;
+    }
 
     if (gtk_widget_is_visible (pbox))
     {
@@ -433,8 +447,8 @@ static void edit_ok (GtkWidget *, gpointer)
 
     write_xml (key, act, name, param);
 
-    // free name...
-    g_free (act);
+    if (act) g_free (act);
+    if (name) g_free (name);
 
     gtk_widget_destroy (se);
 
