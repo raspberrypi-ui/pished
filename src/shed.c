@@ -528,6 +528,22 @@ static gboolean keyrel (GtkWidget *, GdkEventKey *event, gpointer user_data)
     return TRUE;
 }
 
+static void action_changed (GtkComboBox *cb, gpointer)
+{
+    const char *act;
+    GtkTreeIter iter;
+
+    gtk_combo_box_get_active_iter (GTK_COMBO_BOX (actcb), &iter);
+    gtk_tree_model_get (GTK_TREE_MODEL (act_sort), &iter, 0, &act, -1);
+    if (!g_strcmp0 (act, "Execute"))
+    {
+        gtk_label_set_text (GTK_LABEL (paramlbl), "Command:");
+        gtk_entry_set_text (GTK_ENTRY (paramentry), "");
+        gtk_widget_show (pbox);
+    }
+    else gtk_widget_hide (pbox);
+}
+
 static void show_editor (char *key, char *act, char *name, char *param)
 {
     char *str;
@@ -569,6 +585,7 @@ static void show_editor (char *key, char *act, char *name, char *param)
         g_free (str);
         if (!gtk_tree_model_iter_next (GTK_TREE_MODEL (act_sort), &iter)) break;
     }
+    g_signal_connect ((GObject *) actcb, "changed", G_CALLBACK (action_changed), NULL);
 
     paramlbl = (GtkWidget *) gtk_builder_get_object (build, "lbl_param");
     pbox = (GtkWidget *) gtk_builder_get_object (build, "param_box");
@@ -617,6 +634,7 @@ static void edit_button (GtkWidget *, gpointer user_data)
     {
         gtk_tree_model_get (model, &iter, 0, &key, 1, &act, 2, &name, 3, &param, -1);
         show_editor (key, act, name, param);
+
         g_free (key);
         g_free (act);
         g_free (name);
@@ -626,18 +644,18 @@ static void edit_button (GtkWidget *, gpointer user_data)
 
 static void delete_item (GtkWidget *, gpointer user_data)
 {
-    char *str;
-    gtk_tree_model_get (GTK_TREE_MODEL (ls), &miter, 0, &str, -1);
+    char *key;
+    gtk_tree_model_get (GTK_TREE_MODEL (ls), &miter, 0, &key, -1);
 
-    write_xml (str, NULL, NULL, NULL);
-    g_free (str);
+    write_xml (key, NULL, NULL, NULL);
+    g_free (key);
 
     reload_bindings ();
 }
 
 static void delete_button (GtkWidget *, gpointer user_data)
 {
-    char *str;
+    char *key;
     GtkTreeSelection *selection;
     GtkTreeModel *model;
     GtkTreeIter iter;
@@ -645,9 +663,9 @@ static void delete_button (GtkWidget *, gpointer user_data)
     selection = gtk_tree_view_get_selection (GTK_TREE_VIEW (tv));
     if (selection && gtk_tree_selection_get_selected (selection, &model, &iter))
     {
-        gtk_tree_model_get (model, &iter, 0, &str, -1);
-        write_xml (str, NULL, NULL, NULL);
-        g_free (str);
+        gtk_tree_model_get (model, &iter, 0, &key, -1);
+        write_xml (key, NULL, NULL, NULL);
+        g_free (key);
 
         reload_bindings ();
     }
@@ -757,7 +775,8 @@ void init_plugin (GtkWidget *parent)
 
 int plugin_tabs (void)
 {
-    return 1;
+    if (wm == WM_LABWC) return 1;
+    else return 0;
 }
 
 const char *tab_name (int tab)
