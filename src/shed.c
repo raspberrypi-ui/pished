@@ -341,6 +341,7 @@ void read_xml (const char *file)
 void write_xml (char *key, char *act, char *name, char *param)
 {
     char *user_file, *cptr;
+    int i;
     xmlDocPtr xDoc;
     xmlXPathContextPtr xpathCtx;
     xmlXPathObjectPtr xpathObj, xpathObj2;
@@ -389,12 +390,15 @@ void write_xml (char *key, char *act, char *name, char *param)
     }
     else cur_node = xpathObj->nodesetval->nodeTab[0];
 
-    // delete any existing action node
+    // delete any existing action nodes
     xpathObj2 = xmlXPathNodeEval (cur_node, XC ("./o:action"), xpathCtx);
     if (!xmlXPathNodeSetIsEmpty (xpathObj2->nodesetval))
     {
-        xmlUnlinkNode (xpathObj2->nodesetval->nodeTab[0]);
-        xmlFreeNode (xpathObj2->nodesetval->nodeTab[0]);
+        for (i = 0; i < xpathObj2->nodesetval->nodeNr; i++)
+        {
+            xmlUnlinkNode (xpathObj2->nodesetval->nodeTab[i]);
+            xmlFreeNode (xpathObj2->nodesetval->nodeTab[i]);
+        }
     }
     xmlXPathFreeObject (xpathObj2);
 
