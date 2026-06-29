@@ -139,7 +139,7 @@ static GtkWidget *main_dlg;
 /* Flag to indicate window manager in use */
 static wm_type wm;
 
-static GtkWidget *tv, *se, *se_ok, *se_can, *keyentry;
+static GtkWidget *tv, *se, *se_ok, *se_can, *keyentry, *keylabel, *actcb, *pbox, *paramlbl, *paramentry;
 static GtkListStore *ls, *actions;
 static GtkTreeModelSort *sorted;
 static GtkTreeModel *act_sort;
@@ -338,9 +338,113 @@ void read_xml (const char *file)
     xmlCleanupParser ();
 }
 
+void write_xml (char *key, char *act, char *name, char *param)
+{
+    char *user_file, *cptr;
+    xmlDocPtr xDoc;
+    xmlXPathContextPtr xpathCtx;
+    xmlXPathObjectPtr xpathObj;
+    xmlNodePtr root, tnode, cur_node;
+
+    user_file = g_build_filename (g_get_user_config_dir (), "labwc/rc.xml", NULL);
+
+    // read in data from XML file
+    xmlInitParser ();
+    LIBXML_TEST_VERSION
+    if (g_file_test (user_file, G_FILE_TEST_IS_REGULAR))
+    {
+        xDoc = xmlReadFile (user_file, NULL, XML_PARSE_NOBLANKS);
+        if (!xDoc) xDoc = xmlNewDoc (XC ("1.0"));
+    }
+    else xDoc = xmlNewDoc (XC ("1.0"));
+    xpathCtx = xmlXPathNewContext (xDoc);
+    xmlXPathRegisterNs (xpathCtx, XC ("o"), XC ("http://openbox.org/3.4/rc"));
+
+    // check that the config and keyboard nodes exist in the document - create them if not
+    xpathObj = xmlXPathEvalExpression (XC ("/o:openbox_config"), xpathCtx);
+    if (xmlXPathNodeSetIsEmpty (xpathObj->nodesetval))
+    {
+        root = xmlNewNode (NULL, XC ("openbox_config"));
+        xmlNewNs (root, XC ("http://openbox.org/3.4/rc"), NULL);
+        xmlDocSetRootElement (xDoc, root);
+    }
+    else root = xpathObj->nodesetval->nodeTab[0];
+    xmlXPathFreeObject (xpathObj);
+
+    xpathObj = xmlXPathEvalExpression (XC ("/o:openbox_config/o:keyboard"), xpathCtx);
+    if (xmlXPathNodeSetIsEmpty (xpathObj->nodesetval))
+        tnode = xmlNewChild (root, NULL, XC ("keyboard"), NULL);
+    else
+        tnode = xpathObj->nodesetval->nodeTab[0];
+    xmlXPathFreeObject (xpathObj);
+
+    // create or update relevant node with new values
+    cptr = g_strdup_printf ("/o:openbox_config/o:keyboard/o:keybind[@key = '%s']", key);
+    xpathObj = xmlXPathEvalExpression (XC (cptr), xpathCtx);
+    g_free (cptr);
+
+    if (xmlXPathNodeSetIsEmpty (xpathObj->nodesetval))
+        cur_node = xmlNewChild (tnode, NULL, XC ("keybind"), NULL);
+    else
+        cur_node = xpathObj->nodesetval->nodeTab[0];
+
+    xmlSetProp (cur_node, XC ("key"), XC (key));
+    if (act)
+    {
+        cur_node = xmlNewChild (cur_node, NULL, XC ("action"), NULL);
+        xmlSetProp (cur_node, XC ("name"), XC (act));
+        if (name) xmlSetProp (cur_node, XC (name), XC (param));
+    }
+    xmlXPathFreeObject (xpathObj);
+
+    // cleanup XML
+    xmlXPathFreeContext (xpathCtx);
+    xmlSaveFormatFile (user_file, xDoc, 1);
+    xmlFreeDoc (xDoc);
+    xmlCleanupParser ();
+
+    g_free (user_file);
+}
+
 static void edit_ok (GtkWidget *, gpointer)
 {
+    const char *key;
+    char *act, *name, *param;
+    GtkTreeIter iter;
+
+    if (gtk_widget_is_visible (keyentry)) key = gtk_entry_get_text (GTK_ENTRY (keyentry));
+    else key = gtk_label_get_text (GTK_LABEL (keylabel));
+
+    gtk_combo_box_get_active_iter (GTK_COMBO_BOX (actcb), &iter);
+    gtk_tree_model_get (GTK_TREE_MODEL (act_sort), &iter, 0, &act, -1);
+
+    if (gtk_widget_is_visible (pbox))
+    {
+        name = g_strdup (gtk_label_get_text (GTK_LABEL (paramlbl)));
+        name[0] = g_ascii_tolower (name[0]);
+        name[strlen (name) - 1] = 0;
+        param = gtk_entry_get_text (GTK_ENTRY (paramentry));
+    }
+    else
+    {
+        name = NULL;
+        param = NULL;
+    }
+
+    write_xml (key, act, name, param);
+
+    // free name...
+    g_free (act);
+
     gtk_widget_destroy (se);
+
+    gtk_list_store_clear (ls);
+
+    char *user_file = g_build_filename (g_get_user_config_dir (), "labwc/rc.xml", NULL);
+    read_xml ("/etc/xdg/labwc/rc.xml");
+    read_xml (user_file);
+    g_free (user_file);
+
 }
 
 static void edit_cancel (GtkWidget *, gpointer)
@@ -390,7 +494,6 @@ static void show_keys_rel (guint keycode, guint mods)
 
 static gboolean keypress (GtkWidget *, GdkEventKey *event, gpointer user_data)
 {
-    //printf ("key press %d %x %d %d\n", event->keyval, event->state, event->hardware_keycode, event->is_modifier);
     keylog = TRUE;
     return TRUE;
 }
@@ -399,7 +502,6 @@ static gboolean keyrel (GtkWidget *, GdkEventKey *event, gpointer user_data)
 {
     if (keylog)
     {
-        //printf ("key release %d %x %d %d\n", event->keyval, event->state, event->hardware_keycode, event->is_modifier);
         show_keys_rel (event->keyval, event->state); 
         keylog = FALSE;
     }
@@ -410,7 +512,6 @@ static void show_editor (char *key, char *act, char *name, char *param)
 {
     char *str;
     GtkBuilder *build;
-    GtkWidget *wid;
     GtkTreeIter iter;
 
     build = gtk_builder_new_from_file (PACKAGE_DATA_DIR "/ui/shed.ui");
@@ -420,54 +521,49 @@ static void show_editor (char *key, char *act, char *name, char *param)
     se_ok = (GtkWidget *) gtk_builder_get_object (build, "btn_ok");
     se_can = (GtkWidget *) gtk_builder_get_object (build, "btn_cancel");
 
+    keylabel = (GtkWidget *) gtk_builder_get_object (build, "lbl_key");
+    keyentry = (GtkWidget *) gtk_builder_get_object (build, "keys");
+
     if (key)
     {
-        wid = (GtkWidget *) gtk_builder_get_object (build, "lbl_key");
-        gtk_label_set_text (GTK_LABEL (wid), key);
-
-        wid = (GtkWidget *) gtk_builder_get_object (build, "keys");
-        gtk_widget_hide (wid);
+        gtk_label_set_text (GTK_LABEL (keylabel), key);
+        gtk_widget_hide (keyentry);
     }
     else
     {
-        wid = (GtkWidget *) gtk_builder_get_object (build, "lbl_key");
-        gtk_widget_hide (wid);
+        g_signal_connect ((GObject *) keyentry, "key-press-event", G_CALLBACK (keypress), NULL);
+        g_signal_connect ((GObject *) keyentry, "key-release-event", G_CALLBACK (keyrel), NULL);
+        gtk_widget_hide (keylabel);
     }
 
-    wid = (GtkWidget *) gtk_builder_get_object (build, "cb_action");
-    gtk_combo_box_set_model (GTK_COMBO_BOX (wid), GTK_TREE_MODEL (act_sort));
+    actcb = (GtkWidget *) gtk_builder_get_object (build, "cb_action");
+    gtk_combo_box_set_model (GTK_COMBO_BOX (actcb), GTK_TREE_MODEL (act_sort));
     gtk_tree_model_get_iter_first (GTK_TREE_MODEL (act_sort), &iter);
     while (1)
     {
         gtk_tree_model_get (GTK_TREE_MODEL (act_sort), &iter, 0, &str, -1);
         if (!g_strcmp0 (act ? act : "None", str))
         {
-            gtk_combo_box_set_active_iter (GTK_COMBO_BOX (wid), &iter);
+            gtk_combo_box_set_active_iter (GTK_COMBO_BOX (actcb), &iter);
         }
         g_free (str);
         if (!gtk_tree_model_iter_next (GTK_TREE_MODEL (act_sort), &iter)) break;
     }
 
-    keyentry = (GtkWidget *) gtk_builder_get_object (build, "keys");
-    g_signal_connect ((GObject *) keyentry, "key-press-event", G_CALLBACK (keypress), NULL);
-    g_signal_connect ((GObject *) keyentry, "key-release-event", G_CALLBACK (keyrel), NULL);
+    paramlbl = (GtkWidget *) gtk_builder_get_object (build, "lbl_param");
+    pbox = (GtkWidget *) gtk_builder_get_object (build, "param_box");
+    paramentry = (GtkWidget *) gtk_builder_get_object (build, "param");
 
     if (param)
     {
-        wid = (GtkWidget *) gtk_builder_get_object (build, "lbl_param");
         str = g_strdup_printf ("%s:", name);
         str[0] = g_ascii_toupper (str[0]);
-        gtk_label_set_text (GTK_LABEL (wid), str);
+        gtk_label_set_text (GTK_LABEL (paramlbl), str);
         g_free (str);
 
-        wid = (GtkWidget *) gtk_builder_get_object (build, "param");
-        gtk_entry_set_text (GTK_ENTRY (wid), param);
+        gtk_entry_set_text (GTK_ENTRY (paramentry), param);
     }
-    else
-    {
-        wid = (GtkWidget *) gtk_builder_get_object (build, "param_box");
-        gtk_widget_hide (wid);
-    }
+    else gtk_widget_hide (pbox);
 
     g_signal_connect ((GObject *) se_ok, "clicked", G_CALLBACK (edit_ok), NULL);
     g_signal_connect ((GObject *) se_can, "clicked", G_CALLBACK (edit_cancel), NULL);
@@ -482,6 +578,7 @@ static void edit_item (GtkWidget *, gpointer user_data)
 
     gtk_tree_model_get (GTK_TREE_MODEL (ls), &miter, 0, &key, 1, &act, 2, &name, 3, &param, -1);
     show_editor (key, act, name, param);
+
     g_free (key);
     g_free (act);
     g_free (name);
