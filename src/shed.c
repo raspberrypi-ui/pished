@@ -137,8 +137,8 @@ static GtkWidget *main_dlg;
 /* Flag to indicate window manager in use */
 static wm_type wm;
 
-static GtkWidget *tv, *se, *se_ok, *se_can, *keyentry, *keylabel, *actcb, *pbox, *paramlbl, *paramentry;
-static GtkListStore *bindings, *actions;
+static GtkWidget *tv, *se, *se_ok, *se_can, *keyentry, *keylabel, *actcb, *pbox, *paramlbl, *paramentry, *paramcb;
+static GtkListStore *bindings, *actions, *dirs_lrud, *dirs_lrudc, *dirs_bhv;
 static GtkTreeModel *bind_sort, *act_sort;
 static GtkTreeIter miter;
 static gboolean keylog = FALSE;
@@ -154,6 +154,7 @@ static void add_or_replace (GtkListStore *ls, const char *key, const char *act, 
 static void write_xml (const char *key, const char *act, const char *name, const char *param);
 static void reload_bindings (void);
 static void show_editor (char *key, char *act, char *name, char *param);
+static void init_combo (GtkComboBox *cb, const char *init);
 static void edit_ok (GtkWidget *, gpointer);
 static void edit_cancel (GtkWidget *, gpointer);
 static void action_changed (GtkComboBox *cb, gpointer);
@@ -429,22 +430,13 @@ static void show_editor (char *key, char *act, char *name, char *param)
 
     actcb = (GtkWidget *) gtk_builder_get_object (build, "cb_action");
     gtk_combo_box_set_model (GTK_COMBO_BOX (actcb), GTK_TREE_MODEL (act_sort));
-    gtk_tree_model_get_iter_first (GTK_TREE_MODEL (act_sort), &iter);
-    while (1)
-    {
-        gtk_tree_model_get (GTK_TREE_MODEL (act_sort), &iter, 0, &str, -1);
-        if (!g_strcmp0 (act ? act : "None", str))
-        {
-            gtk_combo_box_set_active_iter (GTK_COMBO_BOX (actcb), &iter);
-        }
-        g_free (str);
-        if (!gtk_tree_model_iter_next (GTK_TREE_MODEL (act_sort), &iter)) break;
-    }
+    init_combo (GTK_COMBO_BOX (actcb), act ? act : "None");
     g_signal_connect ((GObject *) actcb, "changed", G_CALLBACK (action_changed), NULL);
 
     paramlbl = (GtkWidget *) gtk_builder_get_object (build, "lbl_param");
     pbox = (GtkWidget *) gtk_builder_get_object (build, "param_box");
     paramentry = (GtkWidget *) gtk_builder_get_object (build, "param");
+    paramcb = (GtkWidget *) gtk_builder_get_object (build, "cb_param");
 
     if (param)
     {
@@ -453,7 +445,33 @@ static void show_editor (char *key, char *act, char *name, char *param)
         gtk_label_set_text (GTK_LABEL (paramlbl), str);
         g_free (str);
 
-        gtk_entry_set_text (GTK_ENTRY (paramentry), param);
+        if (!g_strcmp0 (act, "MoveToEdge") || !g_strcmp0 (act, "GrowToEdge") || !g_strcmp0 (act, "ShrinkToEdge"))
+        {
+            gtk_combo_box_set_model (GTK_COMBO_BOX (paramcb), GTK_TREE_MODEL (dirs_lrud));
+            init_combo (GTK_COMBO_BOX (paramcb), param);
+            gtk_widget_hide (paramentry);
+            gtk_widget_show (paramcb);
+        }
+        else if (!g_strcmp0 (act, "SnapToEdge") || !g_strcmp0 (act, "ToggleSnapToEdge"))
+        {
+            gtk_combo_box_set_model (GTK_COMBO_BOX (paramcb), GTK_TREE_MODEL (dirs_lrudc));
+            init_combo (GTK_COMBO_BOX (paramcb), param);
+            gtk_widget_hide (paramentry);
+            gtk_widget_show (paramcb);
+        }
+        else if (!g_strcmp0 (act, "ToggleMaximize") || !g_strcmp0 (act, "Maximize") || !g_strcmp0 (act, "UnMaximize"))
+        {
+            gtk_combo_box_set_model (GTK_COMBO_BOX (paramcb), GTK_TREE_MODEL (dirs_bhv));
+            init_combo (GTK_COMBO_BOX (paramcb), param);
+            gtk_widget_hide (paramentry);
+            gtk_widget_show (paramcb);
+        }
+        else
+        {
+            gtk_entry_set_text (GTK_ENTRY (paramentry), param);
+            gtk_widget_hide (paramcb);
+            gtk_widget_show (paramentry);
+        }
     }
     else gtk_widget_hide (pbox);
 
@@ -462,6 +480,27 @@ static void show_editor (char *key, char *act, char *name, char *param)
 
     gtk_window_present (GTK_WINDOW (se));
     g_object_unref (build);
+}
+
+static void init_combo (GtkComboBox *cb, const char *init)
+{
+    GtkTreeIter iter;
+    GtkTreeModel *model = gtk_combo_box_get_model (cb);
+    char *str;
+
+    gtk_tree_model_get_iter_first (model, &iter);
+    while (1)
+    {
+        gtk_tree_model_get (model, &iter, 0, &str, -1);
+        if (!g_strcmp0 (init, str))
+        {
+            gtk_combo_box_set_active_iter (cb, &iter);
+            g_free (str);
+            return;
+        }
+        g_free (str);
+        if (!gtk_tree_model_iter_next (model, &iter)) break;
+    }
 }
 
 static void edit_ok (GtkWidget *, gpointer)
@@ -486,7 +525,9 @@ static void edit_ok (GtkWidget *, gpointer)
         name = g_strdup (gtk_label_get_text (GTK_LABEL (paramlbl)));
         name[0] = g_ascii_tolower (name[0]);
         name[strlen (name) - 1] = 0;
-        param = gtk_entry_get_text (GTK_ENTRY (paramentry));
+        if (gtk_widget_is_visible (paramcb))
+            param = gtk_combo_box_text_get_active_text (GTK_COMBO_BOX_TEXT (paramcb));
+        else param = gtk_entry_get_text (GTK_ENTRY (paramentry));
     }
     else
     {
@@ -520,6 +561,43 @@ static void action_changed (GtkComboBox *cb, gpointer)
     {
         gtk_label_set_text (GTK_LABEL (paramlbl), "Command:");
         gtk_entry_set_text (GTK_ENTRY (paramentry), "");
+        gtk_widget_hide (paramcb);
+        gtk_widget_show (paramentry);
+        gtk_widget_show (pbox);
+    }
+    else if (!g_strcmp0 (act, "ShowMenu"))
+    {
+        gtk_label_set_text (GTK_LABEL (paramlbl), "Menu:");
+        gtk_entry_set_text (GTK_ENTRY (paramentry), "");
+        gtk_widget_hide (paramcb);
+        gtk_widget_show (paramentry);
+        gtk_widget_show (pbox);
+    }
+    else if (!g_strcmp0 (act, "MoveToEdge") || !g_strcmp0 (act, "GrowToEdge") || !g_strcmp0 (act, "ShrinkToEdge"))
+    {
+        gtk_label_set_text (GTK_LABEL (paramlbl), "Direction:");
+        gtk_combo_box_set_model (GTK_COMBO_BOX (paramcb), GTK_TREE_MODEL (dirs_lrud));
+        gtk_combo_box_set_active (GTK_COMBO_BOX (paramcb), 0);
+        gtk_widget_hide (paramentry);
+        gtk_widget_show (paramcb);
+        gtk_widget_show (pbox);
+    }
+    else if (!g_strcmp0 (act, "SnapToEdge") || !g_strcmp0 (act, "ToggleSnapToEdge"))
+    {
+        gtk_label_set_text (GTK_LABEL (paramlbl), "Direction:");
+        gtk_combo_box_set_model (GTK_COMBO_BOX (paramcb), GTK_TREE_MODEL (dirs_lrudc));
+        gtk_combo_box_set_active (GTK_COMBO_BOX (paramcb), 0);
+        gtk_widget_hide (paramentry);
+        gtk_widget_show (paramcb);
+        gtk_widget_show (pbox);
+    }
+    else if (!g_strcmp0 (act, "ToggleMaximize") || !g_strcmp0 (act, "Maximize") || !g_strcmp0 (act, "UnMaximize"))
+    {
+        gtk_label_set_text (GTK_LABEL (paramlbl), "Direction:");
+        gtk_combo_box_set_model (GTK_COMBO_BOX (paramcb), GTK_TREE_MODEL (dirs_bhv));
+        gtk_combo_box_set_active (GTK_COMBO_BOX (paramcb), 0);
+        gtk_widget_hide (paramentry);
+        gtk_widget_show (paramcb);
         gtk_widget_show (pbox);
     }
     else gtk_widget_hide (pbox);
@@ -729,6 +807,36 @@ static void init_config (void)
     }
     act_sort = gtk_tree_model_sort_new_with_model (GTK_TREE_MODEL (actions));
     gtk_tree_sortable_set_sort_column_id (GTK_TREE_SORTABLE (act_sort), 0, GTK_SORT_ASCENDING);
+
+    dirs_lrud = gtk_list_store_new (1, G_TYPE_STRING);
+    gtk_list_store_append (dirs_lrud, &iter);
+    gtk_list_store_set (dirs_lrud, &iter, 0, "left", -1);
+    gtk_list_store_append (dirs_lrud, &iter);
+    gtk_list_store_set (dirs_lrud, &iter, 0, "right", -1);
+    gtk_list_store_append (dirs_lrud, &iter);
+    gtk_list_store_set (dirs_lrud, &iter, 0, "up", -1);
+    gtk_list_store_append (dirs_lrud, &iter);
+    gtk_list_store_set (dirs_lrud, &iter, 0, "down", -1);
+
+    dirs_lrudc = gtk_list_store_new (1, G_TYPE_STRING);
+    gtk_list_store_append (dirs_lrudc, &iter);
+    gtk_list_store_set (dirs_lrudc, &iter, 0, "left", -1);
+    gtk_list_store_append (dirs_lrudc, &iter);
+    gtk_list_store_set (dirs_lrudc, &iter, 0, "right", -1);
+    gtk_list_store_append (dirs_lrudc, &iter);
+    gtk_list_store_set (dirs_lrudc, &iter, 0, "up", -1);
+    gtk_list_store_append (dirs_lrudc, &iter);
+    gtk_list_store_set (dirs_lrudc, &iter, 0, "down", -1);
+    gtk_list_store_append (dirs_lrudc, &iter);
+    gtk_list_store_set (dirs_lrudc, &iter, 0, "center", -1);
+
+    dirs_bhv = gtk_list_store_new (1, G_TYPE_STRING);
+    gtk_list_store_append (dirs_bhv, &iter);
+    gtk_list_store_set (dirs_bhv, &iter, 0, "both", -1);
+    gtk_list_store_append (dirs_bhv, &iter);
+    gtk_list_store_set (dirs_bhv, &iter, 0, "horizontal", -1);
+    gtk_list_store_append (dirs_bhv, &iter);
+    gtk_list_store_set (dirs_bhv, &iter, 0, "vertical", -1);
 
     user_file = g_build_filename (g_get_user_config_dir (), "labwc/rc.xml", NULL);
     read_xml ("/etc/xdg/labwc/rc.xml");
