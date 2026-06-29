@@ -403,7 +403,6 @@ static void reload_bindings (void)
 static void show_editor (char *key, char *act, char *name, char *param)
 {
     GtkBuilder *build;
-    GtkTreeIter iter;
     char *str;
 
     build = gtk_builder_new_from_file (PACKAGE_DATA_DIR "/ui/shed.ui");
@@ -445,23 +444,15 @@ static void show_editor (char *key, char *act, char *name, char *param)
         gtk_label_set_text (GTK_LABEL (paramlbl), str);
         g_free (str);
 
-        if (!g_strcmp0 (act, "MoveToEdge") || !g_strcmp0 (act, "GrowToEdge") || !g_strcmp0 (act, "ShrinkToEdge"))
+        if (strstr (act, "ToEdge") || strstr (act, "Maximize"))
         {
-            gtk_combo_box_set_model (GTK_COMBO_BOX (paramcb), GTK_TREE_MODEL (dirs_lrud));
-            init_combo (GTK_COMBO_BOX (paramcb), param);
-            gtk_widget_hide (paramentry);
-            gtk_widget_show (paramcb);
-        }
-        else if (!g_strcmp0 (act, "SnapToEdge") || !g_strcmp0 (act, "ToggleSnapToEdge"))
-        {
-            gtk_combo_box_set_model (GTK_COMBO_BOX (paramcb), GTK_TREE_MODEL (dirs_lrudc));
-            init_combo (GTK_COMBO_BOX (paramcb), param);
-            gtk_widget_hide (paramentry);
-            gtk_widget_show (paramcb);
-        }
-        else if (!g_strcmp0 (act, "ToggleMaximize") || !g_strcmp0 (act, "Maximize") || !g_strcmp0 (act, "UnMaximize"))
-        {
-            gtk_combo_box_set_model (GTK_COMBO_BOX (paramcb), GTK_TREE_MODEL (dirs_bhv));
+            if (!g_strcmp0 (act, "MoveToEdge") || !g_strcmp0 (act, "GrowToEdge") || !g_strcmp0 (act, "ShrinkToEdge"))
+                gtk_combo_box_set_model (GTK_COMBO_BOX (paramcb), GTK_TREE_MODEL (dirs_lrud));
+            else if (!g_strcmp0 (act, "SnapToEdge") || !g_strcmp0 (act, "ToggleSnapToEdge"))
+                gtk_combo_box_set_model (GTK_COMBO_BOX (paramcb), GTK_TREE_MODEL (dirs_lrudc));
+            else if (!g_strcmp0 (act, "ToggleMaximize") || !g_strcmp0 (act, "Maximize") || !g_strcmp0 (act, "UnMaximize"))
+                gtk_combo_box_set_model (GTK_COMBO_BOX (paramcb), GTK_TREE_MODEL (dirs_bhv));
+
             init_combo (GTK_COMBO_BOX (paramcb), param);
             gtk_widget_hide (paramentry);
             gtk_widget_show (paramcb);
@@ -573,28 +564,15 @@ static void action_changed (GtkComboBox *cb, gpointer)
         gtk_widget_show (paramentry);
         gtk_widget_show (pbox);
     }
-    else if (!g_strcmp0 (act, "MoveToEdge") || !g_strcmp0 (act, "GrowToEdge") || !g_strcmp0 (act, "ShrinkToEdge"))
+    else if (strstr (act, "ToEdge") || strstr (act, "Maximize"))
     {
         gtk_label_set_text (GTK_LABEL (paramlbl), "Direction:");
-        gtk_combo_box_set_model (GTK_COMBO_BOX (paramcb), GTK_TREE_MODEL (dirs_lrud));
-        gtk_combo_box_set_active (GTK_COMBO_BOX (paramcb), 0);
-        gtk_widget_hide (paramentry);
-        gtk_widget_show (paramcb);
-        gtk_widget_show (pbox);
-    }
-    else if (!g_strcmp0 (act, "SnapToEdge") || !g_strcmp0 (act, "ToggleSnapToEdge"))
-    {
-        gtk_label_set_text (GTK_LABEL (paramlbl), "Direction:");
-        gtk_combo_box_set_model (GTK_COMBO_BOX (paramcb), GTK_TREE_MODEL (dirs_lrudc));
-        gtk_combo_box_set_active (GTK_COMBO_BOX (paramcb), 0);
-        gtk_widget_hide (paramentry);
-        gtk_widget_show (paramcb);
-        gtk_widget_show (pbox);
-    }
-    else if (!g_strcmp0 (act, "ToggleMaximize") || !g_strcmp0 (act, "Maximize") || !g_strcmp0 (act, "UnMaximize"))
-    {
-        gtk_label_set_text (GTK_LABEL (paramlbl), "Direction:");
-        gtk_combo_box_set_model (GTK_COMBO_BOX (paramcb), GTK_TREE_MODEL (dirs_bhv));
+        if (!g_strcmp0 (act, "MoveToEdge") || !g_strcmp0 (act, "GrowToEdge") || !g_strcmp0 (act, "ShrinkToEdge"))
+            gtk_combo_box_set_model (GTK_COMBO_BOX (paramcb), GTK_TREE_MODEL (dirs_lrud));
+        else if (!g_strcmp0 (act, "SnapToEdge") || !g_strcmp0 (act, "ToggleSnapToEdge"))
+            gtk_combo_box_set_model (GTK_COMBO_BOX (paramcb), GTK_TREE_MODEL (dirs_lrudc));
+        else if (!g_strcmp0 (act, "ToggleMaximize") || !g_strcmp0 (act, "Maximize") || !g_strcmp0 (act, "UnMaximize"))
+            gtk_combo_box_set_model (GTK_COMBO_BOX (paramcb), GTK_TREE_MODEL (dirs_bhv));
         gtk_combo_box_set_active (GTK_COMBO_BOX (paramcb), 0);
         gtk_widget_hide (paramentry);
         gtk_widget_show (paramcb);
