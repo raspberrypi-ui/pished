@@ -154,20 +154,20 @@ const char *accc[] = {
 #define NPRESETS 14
 
 const char *pres[NPRESETS * 2] = {
-    N_("Volume increase"),          "wfpanelctl volumepulse volu",
-    N_("Volume decrease"),          "wfpanelctl volumepulse vold",
-    N_("Volume mute"),              "wfpanelctl volumepulse mute",
-    N_("Show main menu"),           "wfpanelctl smenu menu",
-    N_("Show network menu"),        "wfpanelctl netman menu",
-    N_("Show Bluetooth menu"),      "wfpanelctl bluetooth menu",
-    N_("Show icon launcher"),       "wfpanelctl nmenu menu",
-    N_("Capture entire screen"),    "gui-screenshot",
-    N_("Capture part of screen"),   "gui-screenshot -a",
-    N_("Run command"),              "gui-runcmd",
-    N_("Install screen reader"),    "gui-pkinst orca reboot",
-    N_("Show shutdown options"),    "pishutdown",
-    N_("Lock screen"),              "swaylock -p",
-    N_("Open terminal"),            "lxterminal"
+    N_("Volume Increase"),          "wfpanelctl volumepulse volu",
+    N_("Volume Decrease"),          "wfpanelctl volumepulse vold",
+    N_("Volume Mute"),              "wfpanelctl volumepulse mute",
+    N_("Show Main Menu"),           "wfpanelctl smenu menu",
+    N_("Show Network Menu"),        "wfpanelctl netman menu",
+    N_("Show Bluetooth Menu"),      "wfpanelctl bluetooth menu",
+    N_("Show Icon Launcher"),       "wfpanelctl nmenu menu",
+    N_("Capture Entire Screen"),    "gui-screenshot",
+    N_("Capture Part of Screen"),   "gui-screenshot -a",
+    N_("Run Command"),              "gui-runcmd",
+    N_("Install Screen Reader"),    "gui-pkinst orca reboot",
+    N_("Show Shutdown Options"),    "pishutdown",
+    N_("Lock Screen"),              "swaylock -p",
+    N_("Open Terminal"),            "lxterminal"
 };
 
 /*----------------------------------------------------------------------------*/
@@ -328,7 +328,32 @@ static void add_or_replace (GtkListStore *ls, const char *key, const char *act, 
 {
     GtkTreeIter iter;
     gboolean valid;
-    char *str;
+    char *str, *lbl, *desc = NULL;
+
+    if (!g_strcmp0 (act, "Execute") && !g_strcmp0 (name, "command") && param)
+    {
+        gtk_tree_model_get_iter_first (GTK_TREE_MODEL (pre_sort), &iter);
+        while (1)
+        {
+            gtk_tree_model_get (GTK_TREE_MODEL (pre_sort), &iter, 0, &lbl, 1, &str, -1);
+            if (!g_strcmp0 (param, str))
+            {
+                desc = g_strdup (lbl);
+                g_free (str);
+                g_free (lbl);
+                break;
+            }
+            g_free (str);
+            g_free (lbl);
+            if (!gtk_tree_model_iter_next (GTK_TREE_MODEL (pre_sort), &iter)) break;
+        }
+    }
+
+    if (!desc)
+    {
+        if (param && param[0]) desc = g_strdup_printf ("%s (%s)", act, param);
+        else desc = g_strdup (act);
+    }
 
     valid = gtk_tree_model_get_iter_first (GTK_TREE_MODEL (bindings), &iter);
     while (valid)
@@ -336,7 +361,7 @@ static void add_or_replace (GtkListStore *ls, const char *key, const char *act, 
         gtk_tree_model_get (GTK_TREE_MODEL (bindings), &iter, 0, &str, -1);
         if (!g_strcmp0 (str, key))
         {
-            if (act) gtk_list_store_set (bindings, &iter, 0, key, 1, act, 2, name, 3, param, 4, rel, -1);
+            if (act) gtk_list_store_set (bindings, &iter, 0, key, 1, act, 2, name, 3, param, 4, rel, 5, desc, -1);
             else gtk_list_store_remove (bindings, &iter);
             g_free (str);
             return;
@@ -345,7 +370,9 @@ static void add_or_replace (GtkListStore *ls, const char *key, const char *act, 
         valid = gtk_tree_model_iter_next (GTK_TREE_MODEL (bindings), &iter);
     }
 
-    if (act) gtk_list_store_insert_with_values (bindings, NULL, -1, 0, key, 1, act, 2, name, 3, param, 4, rel, -1);
+    if (act) gtk_list_store_insert_with_values (bindings, NULL, -1, 0, key, 1, act, 2, name, 3, param, 4, rel, 5, desc, -1);
+
+    g_free (desc);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -961,7 +988,7 @@ static void init_config (void)
     char *user_file;
     int i;
 
-    bindings = gtk_list_store_new (5, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_BOOLEAN);
+    bindings = gtk_list_store_new (6, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_BOOLEAN, G_TYPE_STRING);
     bind_sort = gtk_tree_model_sort_new_with_model (GTK_TREE_MODEL (bindings));
     gtk_tree_sortable_set_sort_column_id (GTK_TREE_SORTABLE (bind_sort), 0, GTK_SORT_ASCENDING);
 
@@ -977,10 +1004,9 @@ static void init_config (void)
     trend = gtk_cell_renderer_text_new ();
 
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (tv), -1, _("Key"), trend, "text", 0, NULL);
-    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (tv), -1, _("Action"), trend, "text", 1, NULL);
-    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (tv), -1, _("Parameter"), trend, "text", 3, NULL);
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (tv), -1, _("Function"), trend, "text", 5, NULL);
 
-    for (i = 0; i < 3; i++)
+    for (i = 0; i < 2; i++)
     {
         gtk_tree_view_column_set_resizable (gtk_tree_view_get_column (GTK_TREE_VIEW (tv), i), TRUE);
         gtk_tree_view_column_set_sizing (gtk_tree_view_get_column (GTK_TREE_VIEW (tv), i), GTK_TREE_VIEW_COLUMN_GROW_ONLY);
