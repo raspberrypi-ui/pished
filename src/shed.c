@@ -75,7 +75,7 @@ const char *action_names[] = {
 	"Maximize",             // direction (hv both)
 	"UnMaximize",           // direction (hv both)
 	"ToggleFullscreen",
-	"SetDecorations",       // decorations forceSSD
+	"SetDecorations",       // decorations(MC) forceSSD
 	"ToggleDecorations",
 	"ToggleAlwaysOnTop",
 	"ToggleAlwaysOnBottom",
@@ -94,8 +94,8 @@ const char *action_names[] = {
 	"MoveRelative",         // x y
 	"SendToDesktop",        // to follow wrap
 	"GoToDesktop",          // to wrap
-	"ToggleSnapToRegion",   // region
-	"SnapToRegion",         // region
+	"ToggleSnapToRegion",   // region(FT)
+	"SnapToRegion",         // region(FT)
 	"UnSnap",
 	"ToggleKeybinds",
 	"FocusOutput",          // output direction (lrud) wrap
@@ -105,7 +105,7 @@ const char *action_names[] = {
 	"ForEach",              // !!!!!
 	"VirtualOutputAdd",     // output_name
 	"VirtualOutputRemove",  // output_remove
-	"AutoPlace",            // policy
+	"AutoPlace",            // policy(MC)
 	"ToggleTearing",
 	"Shade",
 	"Unshade",
@@ -124,6 +124,32 @@ const char *action_names[] = {
 	NULL
 };
 
+const char *lrudc[] = {
+    "left",
+    "right",
+    "up",
+    "down",
+    "center"
+};
+
+const char *bhv[] = {
+    "both",
+    "horizontal",
+    "vertical"
+};
+
+const char *fbn[] = {
+    "full",
+    "border",
+    "none"
+};
+
+const char *accc[] = {
+    "automatic",
+    "cursor",
+    "center",
+    "cascade"
+};
 
 /*----------------------------------------------------------------------------*/
 /* Global data                                                                */
@@ -138,7 +164,7 @@ static GtkWidget *main_dlg;
 static wm_type wm;
 
 static GtkWidget *tv, *se, *se_ok, *se_can, *keyentry, *keylabel, *actcb, *pbox, *paramlbl, *paramentry, *paramcb;
-static GtkListStore *bindings, *actions, *dirs_lrud, *dirs_lrudc, *dirs_bhv;
+static GtkListStore *bindings, *actions, *dirs_lrud, *dirs_lrudc, *dirs_bhv, *decor, *policy;
 static GtkTreeModel *bind_sort, *act_sort;
 static GtkTreeIter miter;
 static gboolean keylog = FALSE;
@@ -238,7 +264,8 @@ static void read_xml (const char *file)
                     if (!g_strcmp0 ((char *) attr2->name, "name"))
                         act = g_strdup ((char *) attr2->children->content);
                     if (!g_strcmp0 ((char *) attr2->name, "command") || !g_strcmp0 ((char *) attr2->name, "direction")
-                        || !g_strcmp0 ((char *) attr2->name, "menu"))
+                        || !g_strcmp0 ((char *) attr2->name, "menu") || !g_strcmp0 ((char *) attr2->name, "decorations")
+                        || !g_strcmp0 ((char *) attr2->name, "region")|| !g_strcmp0 ((char *) attr2->name, "policy"))
                     {
                         name = g_strdup ((char *) attr2->name);
                         param = g_strdup ((char *) attr2->children->content);
@@ -444,7 +471,7 @@ static void show_editor (char *key, char *act, char *name, char *param)
         gtk_label_set_text (GTK_LABEL (paramlbl), str);
         g_free (str);
 
-        if (strstr (act, "ToEdge") || strstr (act, "Maximize"))
+        if (strstr (act, "ToEdge") || strstr (act, "Maximize") || strstr (act, "SetDecorations") || strstr (act, "AutoPlace"))
         {
             if (!g_strcmp0 (act, "MoveToEdge") || !g_strcmp0 (act, "GrowToEdge") || !g_strcmp0 (act, "ShrinkToEdge"))
                 gtk_combo_box_set_model (GTK_COMBO_BOX (paramcb), GTK_TREE_MODEL (dirs_lrud));
@@ -452,6 +479,10 @@ static void show_editor (char *key, char *act, char *name, char *param)
                 gtk_combo_box_set_model (GTK_COMBO_BOX (paramcb), GTK_TREE_MODEL (dirs_lrudc));
             else if (!g_strcmp0 (act, "ToggleMaximize") || !g_strcmp0 (act, "Maximize") || !g_strcmp0 (act, "UnMaximize"))
                 gtk_combo_box_set_model (GTK_COMBO_BOX (paramcb), GTK_TREE_MODEL (dirs_bhv));
+            else if (!g_strcmp0 (act, "SetDecorations"))
+                gtk_combo_box_set_model (GTK_COMBO_BOX (paramcb), GTK_TREE_MODEL (decor));
+            else if (!g_strcmp0 (act, "AutoPlace"))
+                gtk_combo_box_set_model (GTK_COMBO_BOX (paramcb), GTK_TREE_MODEL (policy));
 
             init_combo (GTK_COMBO_BOX (paramcb), param);
             gtk_widget_hide (paramentry);
@@ -564,15 +595,42 @@ static void action_changed (GtkComboBox *cb, gpointer)
         gtk_widget_show (paramentry);
         gtk_widget_show (pbox);
     }
-    else if (strstr (act, "ToEdge") || strstr (act, "Maximize"))
+    else if (strstr (act, "SnapToRegion"))
     {
-        gtk_label_set_text (GTK_LABEL (paramlbl), "Direction:");
+        gtk_label_set_text (GTK_LABEL (paramlbl), "Region:");
+        gtk_entry_set_text (GTK_ENTRY (paramentry), "");
+        gtk_widget_hide (paramcb);
+        gtk_widget_show (paramentry);
+        gtk_widget_show (pbox);
+    }
+    else if (strstr (act, "ToEdge") || strstr (act, "Maximize") || strstr (act, "SetDecorations") || strstr (act, "AutoPlace"))
+    {
         if (!g_strcmp0 (act, "MoveToEdge") || !g_strcmp0 (act, "GrowToEdge") || !g_strcmp0 (act, "ShrinkToEdge"))
+        {
             gtk_combo_box_set_model (GTK_COMBO_BOX (paramcb), GTK_TREE_MODEL (dirs_lrud));
+            gtk_label_set_text (GTK_LABEL (paramlbl), "Direction:");
+        }
         else if (!g_strcmp0 (act, "SnapToEdge") || !g_strcmp0 (act, "ToggleSnapToEdge"))
+        {
             gtk_combo_box_set_model (GTK_COMBO_BOX (paramcb), GTK_TREE_MODEL (dirs_lrudc));
+            gtk_label_set_text (GTK_LABEL (paramlbl), "Direction:");
+        }
         else if (!g_strcmp0 (act, "ToggleMaximize") || !g_strcmp0 (act, "Maximize") || !g_strcmp0 (act, "UnMaximize"))
+        {
             gtk_combo_box_set_model (GTK_COMBO_BOX (paramcb), GTK_TREE_MODEL (dirs_bhv));
+            gtk_label_set_text (GTK_LABEL (paramlbl), "Direction:");
+        }
+        else if (!g_strcmp0 (act, "SetDecorations"))
+        {
+            gtk_combo_box_set_model (GTK_COMBO_BOX (paramcb), GTK_TREE_MODEL (decor));
+            gtk_label_set_text (GTK_LABEL (paramlbl), "Decorations:");
+        }
+        else if (!g_strcmp0 (act, "AutoPlace"))
+        {
+            gtk_combo_box_set_model (GTK_COMBO_BOX (paramcb), GTK_TREE_MODEL (policy));
+            gtk_label_set_text (GTK_LABEL (paramlbl), "Policy:");
+        }
+
         gtk_combo_box_set_active (GTK_COMBO_BOX (paramcb), 0);
         gtk_widget_hide (paramentry);
         gtk_widget_show (paramcb);
@@ -787,34 +845,39 @@ static void init_config (void)
     gtk_tree_sortable_set_sort_column_id (GTK_TREE_SORTABLE (act_sort), 0, GTK_SORT_ASCENDING);
 
     dirs_lrud = gtk_list_store_new (1, G_TYPE_STRING);
-    gtk_list_store_append (dirs_lrud, &iter);
-    gtk_list_store_set (dirs_lrud, &iter, 0, "left", -1);
-    gtk_list_store_append (dirs_lrud, &iter);
-    gtk_list_store_set (dirs_lrud, &iter, 0, "right", -1);
-    gtk_list_store_append (dirs_lrud, &iter);
-    gtk_list_store_set (dirs_lrud, &iter, 0, "up", -1);
-    gtk_list_store_append (dirs_lrud, &iter);
-    gtk_list_store_set (dirs_lrud, &iter, 0, "down", -1);
+    for (i = 0; i < 4; i++)
+    {
+        gtk_list_store_append (dirs_lrud, &iter);
+        gtk_list_store_set (dirs_lrud, &iter, 0, lrudc[i], -1);
+    }
 
     dirs_lrudc = gtk_list_store_new (1, G_TYPE_STRING);
-    gtk_list_store_append (dirs_lrudc, &iter);
-    gtk_list_store_set (dirs_lrudc, &iter, 0, "left", -1);
-    gtk_list_store_append (dirs_lrudc, &iter);
-    gtk_list_store_set (dirs_lrudc, &iter, 0, "right", -1);
-    gtk_list_store_append (dirs_lrudc, &iter);
-    gtk_list_store_set (dirs_lrudc, &iter, 0, "up", -1);
-    gtk_list_store_append (dirs_lrudc, &iter);
-    gtk_list_store_set (dirs_lrudc, &iter, 0, "down", -1);
-    gtk_list_store_append (dirs_lrudc, &iter);
-    gtk_list_store_set (dirs_lrudc, &iter, 0, "center", -1);
+    for (i = 0; i < 5; i++)
+    {
+        gtk_list_store_append (dirs_lrudc, &iter);
+        gtk_list_store_set (dirs_lrudc, &iter, 0, lrudc[i], -1);
+    }
 
     dirs_bhv = gtk_list_store_new (1, G_TYPE_STRING);
-    gtk_list_store_append (dirs_bhv, &iter);
-    gtk_list_store_set (dirs_bhv, &iter, 0, "both", -1);
-    gtk_list_store_append (dirs_bhv, &iter);
-    gtk_list_store_set (dirs_bhv, &iter, 0, "horizontal", -1);
-    gtk_list_store_append (dirs_bhv, &iter);
-    gtk_list_store_set (dirs_bhv, &iter, 0, "vertical", -1);
+    for (i = 0; i < 3; i++)
+    {
+        gtk_list_store_append (dirs_bhv, &iter);
+        gtk_list_store_set (dirs_bhv, &iter, 0, bhv[i], -1);
+    }
+
+    decor = gtk_list_store_new (1, G_TYPE_STRING);
+    for (i = 0; i < 3; i++)
+    {
+        gtk_list_store_append (decor, &iter);
+        gtk_list_store_set (decor, &iter, 0, fbn[i], -1);
+    }
+
+    policy = gtk_list_store_new (1, G_TYPE_STRING);
+    for (i = 0; i < 4; i++)
+    {
+        gtk_list_store_append (policy, &iter);
+        gtk_list_store_set (policy, &iter, 0, accc[i], -1);
+    }
 
     user_file = g_build_filename (g_get_user_config_dir (), "labwc/rc.xml", NULL);
     read_xml ("/etc/xdg/labwc/rc.xml");
