@@ -179,7 +179,7 @@ static wm_type wm;
 
 static GtkBuilder *builder;
 static GtkWidget *main_dlg, *tv, *newbtn, *editbtn, *delbtn, *conf;
-static GtkWidget *se, *se_ok, *se_can, *keyentry, *keylabel, *actcb, *pbox, *paramlbl, *paramentry, *paramcb, *prescb;
+static GtkWidget *se, *se_ok, *se_can, *keyentry, *keylabel, *actcb, *pbox, *paramlbl, *paramentry, *paramcb, *prescb, *relchk;
 static GtkListStore *bindings, *actions, *dirs_lrud, *dirs_lrudc, *dirs_bhv, *decor, *policy, *presets;
 static GtkTreeModel *bind_sort, *act_sort, *pre_sort;
 static GtkTreeIter miter;
@@ -192,10 +192,10 @@ static gboolean keylog = FALSE;
 static void check_directory (const char *path);
 static void read_xml (const char *file);
 static void read_defaults (void);
-static void add_or_replace (GtkListStore *ls, const char *key, const char *act, const char *name, const char *param);
-static void write_xml (const char *key, const char *act, const char *name, const char *param);
+static void add_or_replace (GtkListStore *ls, const char *key, const char *act, const char *name, const char *param, gboolean rel);
+static void write_xml (const char *key, const char *act, const char *name, const char *param, gboolean rel);
 static void reload_bindings (void);
-static void show_editor (char *key, char *act, char *name, char *param);
+static void show_editor (char *key, char *act, char *name, char *param, gboolean rel);
 static void init_combo (GtkComboBox *cb, const char *init);
 static void edit_ok (GtkWidget *, gpointer);
 static void edit_cancel (GtkWidget *, gpointer);
@@ -244,6 +244,7 @@ static void read_xml (const char *file)
     xmlNode *node;
     xmlAttr *attr, *attr2;
     char *key, *act, *name, *param;
+    gboolean rel;
     int i;
 
     // read in data from XML file
@@ -271,12 +272,15 @@ static void read_xml (const char *file)
             act = NULL;
             name = NULL;
             param = NULL;
+            rel = FALSE;
 
             node = xpathObj->nodesetval->nodeTab[i];
             for (attr = node->properties; attr; attr = attr->next)
             {
                 if (!g_strcmp0 ((char *) attr->name, "key"))
                     key = g_strdup ((char *) attr->children->content);
+                if (!g_strcmp0 ((char *) attr->name, "onRelease"))
+                    if (!g_strcmp0 ((char *) attr->children->content, "yes")) rel = TRUE;
             }
             xpathObj2 = xmlXPathNodeEval (node, XC ("./o:action"), xpathCtx);
             if (!xmlXPathNodeSetIsEmpty (xpathObj2->nodesetval))
@@ -296,7 +300,7 @@ static void read_xml (const char *file)
             }
             xmlXPathFreeObject (xpathObj2);
 
-            add_or_replace (bindings, key, act, name, param);
+            add_or_replace (bindings, key, act, name, param, rel);
 
             g_free (key);
             g_free (act);
@@ -317,11 +321,11 @@ static void read_defaults (void)
 	for (int i = 0; key_combos[i].binding; i++)
     {
 		struct key_combos *current = &key_combos[i];
-        add_or_replace (bindings, current->binding, current->action, current->attributes[0].name, current->attributes[0].value);
+        add_or_replace (bindings, current->binding, current->action, current->attributes[0].name, current->attributes[0].value, FALSE);
     }
 }
 
-static void add_or_replace (GtkListStore *ls, const char *key, const char *act, const char *name, const char *param)
+static void add_or_replace (GtkListStore *ls, const char *key, const char *act, const char *name, const char *param, gboolean rel)
 {
     GtkTreeIter iter;
     gboolean valid;
@@ -333,7 +337,7 @@ static void add_or_replace (GtkListStore *ls, const char *key, const char *act, 
         gtk_tree_model_get (GTK_TREE_MODEL (bindings), &iter, 0, &str, -1);
         if (!g_strcmp0 (str, key))
         {
-            if (act) gtk_list_store_set (bindings, &iter, 0, key, 1, act, 2, name, 3, param, -1);
+            if (act) gtk_list_store_set (bindings, &iter, 0, key, 1, act, 2, name, 3, param, 4, rel, -1);
             else gtk_list_store_remove (bindings, &iter);
             g_free (str);
             return;
@@ -342,14 +346,14 @@ static void add_or_replace (GtkListStore *ls, const char *key, const char *act, 
         valid = gtk_tree_model_iter_next (GTK_TREE_MODEL (bindings), &iter);
     }
 
-    if (act) gtk_list_store_insert_with_values (bindings, NULL, -1, 0, key, 1, act, 2, name, 3, param, -1);
+    if (act) gtk_list_store_insert_with_values (bindings, NULL, -1, 0, key, 1, act, 2, name, 3, param, 4, rel, -1);
 }
 
 /*----------------------------------------------------------------------------*/
 /* Write out bindings                                                         */
 /*----------------------------------------------------------------------------*/
 
-static void write_xml (const char *key, const char *act, const char *name, const char *param)
+static void write_xml (const char *key, const char *act, const char *name, const char *param, gboolean rel)
 {
     xmlDocPtr xDoc;
     xmlXPathContextPtr xpathCtx;
@@ -402,6 +406,8 @@ static void write_xml (const char *key, const char *act, const char *name, const
     }
     else cur_node = xpathObj->nodesetval->nodeTab[0];
 
+    if (rel) xmlSetProp (cur_node, XC ("onRelease"), XC ("yes"));
+
     // delete any existing action nodes
     xpathObj2 = xmlXPathNodeEval (cur_node, XC ("./o:action"), xpathCtx);
     if (!xmlXPathNodeSetIsEmpty (xpathObj2->nodesetval))
@@ -449,7 +455,7 @@ static void reload_bindings (void)
 /* Binding editor window                                                      */
 /*----------------------------------------------------------------------------*/
 
-static void show_editor (char *key, char *act, char *name, char *param)
+static void show_editor (char *key, char *act, char *name, char *param, gboolean rel)
 {
     GtkBuilder *build;
     GtkTreeIter iter;
@@ -465,6 +471,7 @@ static void show_editor (char *key, char *act, char *name, char *param)
 
     keylabel = (GtkWidget *) gtk_builder_get_object (build, "lbl_key");
     keyentry = (GtkWidget *) gtk_builder_get_object (build, "keys");
+    relchk = (GtkWidget *) gtk_builder_get_object (build, "check_rel");
 
     if (key)
     {
@@ -478,6 +485,8 @@ static void show_editor (char *key, char *act, char *name, char *param)
         gtk_widget_hide (keylabel);
         gtk_widget_set_sensitive (se_ok, FALSE);
     }
+
+    gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (relchk), rel);
 
     actcb = (GtkWidget *) gtk_builder_get_object (build, "cb_action");
     gtk_combo_box_set_model (GTK_COMBO_BOX (actcb), GTK_TREE_MODEL (act_sort));
@@ -576,10 +585,13 @@ static void edit_ok (GtkWidget *, gpointer)
 {
     const char *key, *param;
     char *act, *name;
+    gboolean rel;
     GtkTreeIter iter;
 
     if (gtk_widget_is_visible (keyentry)) key = gtk_entry_get_text (GTK_ENTRY (keyentry));
     else key = gtk_label_get_text (GTK_LABEL (keylabel));
+
+	rel = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (relchk));
 
     gtk_combo_box_get_active_iter (GTK_COMBO_BOX (actcb), &iter);
     gtk_tree_model_get (GTK_TREE_MODEL (act_sort), &iter, 0, &act, -1);
@@ -604,7 +616,7 @@ static void edit_ok (GtkWidget *, gpointer)
         param = NULL;
     }
 
-    write_xml (key, act, name, param);
+    write_xml (key, act, name, param, rel);
 
     g_free (act);
     g_free (name);
@@ -796,12 +808,13 @@ static void show_keystring (guint keycode, guint mods)
 
 static void new_button (GtkWidget *, gpointer)
 {
-    show_editor (NULL, NULL, NULL, NULL);
+    show_editor (NULL, NULL, NULL, NULL, FALSE);
 }
 
 static void edit_button (GtkWidget *, gpointer)
 {
     char *key, *act, *name, *param;
+    gboolean rel;
     GtkTreeSelection *selection;
     GtkTreeModel *model;
     GtkTreeIter iter;
@@ -809,8 +822,8 @@ static void edit_button (GtkWidget *, gpointer)
     selection = gtk_tree_view_get_selection (GTK_TREE_VIEW (tv));
     if (selection && gtk_tree_selection_get_selected (selection, &model, &iter))
     {
-        gtk_tree_model_get (model, &iter, 0, &key, 1, &act, 2, &name, 3, &param, -1);
-        show_editor (key, act, name, param);
+        gtk_tree_model_get (model, &iter, 0, &key, 1, &act, 2, &name, 3, &param, 4, &rel, -1);
+        show_editor (key, act, name, param, rel);
 
         g_free (key);
         g_free (act);
@@ -886,9 +899,10 @@ static void tv_cursor (GtkTreeView *tv, gpointer)
 static void edit_item (GtkWidget *, gpointer)
 {
     char *key, *act, *name, *param;
+    gboolean rel;
 
-    gtk_tree_model_get (GTK_TREE_MODEL (bindings), &miter, 0, &key, 1, &act, 2, &name, 3, &param, -1);
-    show_editor (key, act, name, param);
+    gtk_tree_model_get (GTK_TREE_MODEL (bindings), &miter, 0, &key, 1, &act, 2, &name, 3, &param, 4, &rel, -1);
+    show_editor (key, act, name, param, rel);
 
     g_free (key);
     g_free (act);
@@ -927,7 +941,7 @@ static void conf_ok (GtkButton *, gpointer)
     gtk_widget_destroy (conf);
 
     gtk_tree_model_get (GTK_TREE_MODEL (bindings), &miter, 0, &key, -1);
-    write_xml (key, NULL, NULL, NULL);
+    write_xml (key, NULL, NULL, NULL, FALSE);
     g_free (key);
 
     reload_bindings ();
@@ -948,7 +962,7 @@ static void init_config (void)
     char *user_file;
     int i;
 
-    bindings = gtk_list_store_new (4, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING);
+    bindings = gtk_list_store_new (5, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_BOOLEAN);
     bind_sort = gtk_tree_model_sort_new_with_model (GTK_TREE_MODEL (bindings));
     gtk_tree_sortable_set_sort_column_id (GTK_TREE_SORTABLE (bind_sort), 0, GTK_SORT_ASCENDING);
 
