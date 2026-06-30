@@ -174,15 +174,11 @@ const char *pres[NPRESETS * 2] = {
 /* Global data                                                                */
 /*----------------------------------------------------------------------------*/
 
-static GtkBuilder *builder;
-
-/* Dialogs */
-static GtkWidget *main_dlg;
-
 /* Flag to indicate window manager in use */
 static wm_type wm;
 
-static GtkWidget *tv, *newbtn, *editbtn, *delbtn;
+static GtkBuilder *builder;
+static GtkWidget *main_dlg, *tv, *newbtn, *editbtn, *delbtn, *conf;
 static GtkWidget *se, *se_ok, *se_can, *keyentry, *keylabel, *actcb, *pbox, *paramlbl, *paramentry, *paramcb, *prescb;
 static GtkListStore *bindings, *actions, *dirs_lrud, *dirs_lrudc, *dirs_bhv, *decor, *policy, *presets;
 static GtkTreeModel *bind_sort, *act_sort, *pre_sort;
@@ -216,6 +212,9 @@ static gboolean tv_button (GtkWidget *wid, GdkEventButton *event, gpointer);
 static void tv_cursor (GtkTreeView *tv, gpointer);
 static void edit_item (GtkWidget *, gpointer);
 static void delete_item (GtkWidget *, gpointer);
+static void show_confirm_dialog (void);
+static void conf_ok (GtkButton *, gpointer);
+static void conf_cancel (GtkButton *, gpointer);
 static void init_config (void);
 
 /*----------------------------------------------------------------------------*/
@@ -456,6 +455,7 @@ static void show_editor (char *key, char *act, char *name, char *param)
     GtkTreeIter iter;
     char *str;
 
+    textdomain (GETTEXT_PACKAGE);
     build = gtk_builder_new_from_file (PACKAGE_DATA_DIR "/ui/shed.ui");
     se = (GtkWidget *) gtk_builder_get_object (build, "shedit");
     gtk_widget_show_all (se);
@@ -820,19 +820,14 @@ static void edit_button (GtkWidget *, gpointer)
 
 static void delete_button (GtkWidget *, gpointer)
 {
-    char *key;
-    GtkTreeSelection *selection;
-    GtkTreeModel *model;
     GtkTreeIter iter;
+    GtkTreeSelection *selection;
 
     selection = gtk_tree_view_get_selection (GTK_TREE_VIEW (tv));
-    if (selection && gtk_tree_selection_get_selected (selection, &model, &iter))
+    if (selection && gtk_tree_selection_get_selected (selection, NULL, &iter))
     {
-        gtk_tree_model_get (model, &iter, 0, &key, -1);
-        write_xml (key, NULL, NULL, NULL);
-        g_free (key);
-
-        reload_bindings ();
+        gtk_tree_model_sort_convert_iter_to_child_iter (GTK_TREE_MODEL_SORT (bind_sort), &miter, &iter);
+        show_confirm_dialog ();
     }
 }
 
@@ -902,13 +897,44 @@ static void edit_item (GtkWidget *, gpointer)
 
 static void delete_item (GtkWidget *, gpointer)
 {
-    char *key;
-    gtk_tree_model_get (GTK_TREE_MODEL (bindings), &miter, 0, &key, -1);
+    show_confirm_dialog ();
+}
 
+/*----------------------------------------------------------------------------*/
+/* Confirmation dialog                                                        */
+/*----------------------------------------------------------------------------*/
+
+static void show_confirm_dialog (void)
+{
+    GtkBuilder *build;
+
+    textdomain (GETTEXT_PACKAGE);
+    build = gtk_builder_new_from_file (PACKAGE_DATA_DIR "/ui/shed.ui");
+
+    conf = (GtkWidget *) gtk_builder_get_object (build, "modal");
+    gtk_window_set_transient_for (GTK_WINDOW (conf), GTK_WINDOW (main_dlg));
+    g_signal_connect (gtk_builder_get_object (build, "modal_ok"), "clicked", G_CALLBACK (conf_ok), NULL);
+    g_signal_connect (gtk_builder_get_object (build, "modal_cancel"), "clicked", G_CALLBACK (conf_cancel), NULL);
+    gtk_widget_show (conf);
+    g_object_unref (build);
+}
+
+static void conf_ok (GtkButton *, gpointer)
+{
+    char *key;
+
+    gtk_widget_destroy (conf);
+
+    gtk_tree_model_get (GTK_TREE_MODEL (bindings), &miter, 0, &key, -1);
     write_xml (key, NULL, NULL, NULL);
     g_free (key);
 
     reload_bindings ();
+}
+
+static void conf_cancel (GtkButton *, gpointer)
+{
+    gtk_widget_destroy (conf);
 }
 
 /*----------------------------------------------------------------------------*/
