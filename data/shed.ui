@@ -45,6 +45,7 @@
             <property name="visible">True</property>
             <property name="can-focus">False</property>
             <property name="spacing">5</property>
+            <property name="homogeneous">True</property>
             <property name="layout-style">start</property>
             <child>
               <object class="GtkButton" id="new_btn">
@@ -143,7 +144,7 @@
                 <property name="can-focus">True</property>
               </object>
               <packing>
-                <property name="expand">True</property>
+                <property name="expand">False</property>
                 <property name="fill">True</property>
                 <property name="pack-type">end</property>
                 <property name="position">2</property>
@@ -161,6 +162,7 @@
             <property name="visible">True</property>
             <property name="can-focus">False</property>
             <property name="spacing">5</property>
+            <property name="homogeneous">True</property>
             <property name="layout-style">end</property>
             <child>
               <object class="GtkButton" id="btn_cancel">
@@ -222,7 +224,7 @@
                 <property name="can-focus">False</property>
               </object>
               <packing>
-                <property name="expand">True</property>
+                <property name="expand">False</property>
                 <property name="fill">True</property>
                 <property name="pack-type">end</property>
                 <property name="position">1</property>
@@ -259,7 +261,7 @@
                 <property name="can-focus">False</property>
               </object>
               <packing>
-                <property name="expand">True</property>
+                <property name="expand">False</property>
                 <property name="fill">True</property>
                 <property name="pack-type">end</property>
                 <property name="position">1</property>
@@ -296,7 +298,7 @@
                 <property name="can-focus">True</property>
               </object>
               <packing>
-                <property name="expand">True</property>
+                <property name="expand">False</property>
                 <property name="fill">True</property>
                 <property name="pack-type">end</property>
                 <property name="position">1</property>
@@ -308,7 +310,7 @@
                 <property name="can-focus">False</property>
               </object>
               <packing>
-                <property name="expand">True</property>
+                <property name="expand">False</property>
                 <property name="fill">True</property>
                 <property name="pack-type">end</property>
                 <property name="position">2</property>
@@ -323,5 +325,14 @@
         </child>
       </object>
     </child>
+  </object>
+  <object class="GtkSizeGroup">
+    <widgets>
+      <widget name="keys"/>
+      <widget name="cb_preset"/>
+      <widget name="cb_action"/>
+      <widget name="param"/>
+      <widget name="cb_param"/>
+    </widgets>
   </object>
 </interface>
