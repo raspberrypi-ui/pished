@@ -470,15 +470,15 @@ static void show_editor (char *key, char *act, char *name, char *param)
     }
     else
     {
-        g_signal_connect ((GObject *) keyentry, "key-press-event", G_CALLBACK (keypress), NULL);
-        g_signal_connect ((GObject *) keyentry, "key-release-event", G_CALLBACK (keyrel), NULL);
+        g_signal_connect (keyentry, "key-press-event", G_CALLBACK (keypress), NULL);
+        g_signal_connect (keyentry, "key-release-event", G_CALLBACK (keyrel), NULL);
         gtk_widget_hide (keylabel);
     }
 
     actcb = (GtkWidget *) gtk_builder_get_object (build, "cb_action");
     gtk_combo_box_set_model (GTK_COMBO_BOX (actcb), GTK_TREE_MODEL (act_sort));
     init_combo (GTK_COMBO_BOX (actcb), act ? act : "None");
-    g_signal_connect ((GObject *) actcb, "changed", G_CALLBACK (action_changed), NULL);
+    g_signal_connect (actcb, "changed", G_CALLBACK (action_changed), NULL);
 
     paramlbl = (GtkWidget *) gtk_builder_get_object (build, "lbl_param");
     pbox = (GtkWidget *) gtk_builder_get_object (build, "param_box");
@@ -537,10 +537,10 @@ static void show_editor (char *key, char *act, char *name, char *param)
             if (!gtk_tree_model_iter_next (GTK_TREE_MODEL (presets), &iter)) break;
         }
     }
-    g_signal_connect ((GObject *) prescb, "changed", G_CALLBACK (preset_changed), NULL);
+    g_signal_connect (prescb, "changed", G_CALLBACK (preset_changed), NULL);
 
-    g_signal_connect ((GObject *) se_ok, "clicked", G_CALLBACK (edit_ok), NULL);
-    g_signal_connect ((GObject *) se_can, "clicked", G_CALLBACK (edit_cancel), NULL);
+    g_signal_connect (se_ok, "clicked", G_CALLBACK (edit_ok), NULL);
+    g_signal_connect (se_can, "clicked", G_CALLBACK (edit_cancel), NULL);
 
     gtk_window_present (GTK_WINDOW (se));
     g_object_unref (build);
@@ -894,9 +894,9 @@ static void init_config (void)
     }
 
     g_signal_connect (tv, "button-release-event", G_CALLBACK (tv_button), NULL);
-    g_signal_connect ((GtkWidget *) gtk_builder_get_object (builder, "new_btn"), "clicked", G_CALLBACK (new_button), NULL);
-    g_signal_connect ((GtkWidget *) gtk_builder_get_object (builder, "edit_btn"), "clicked", G_CALLBACK (edit_button), NULL);
-    g_signal_connect ((GtkWidget *) gtk_builder_get_object (builder, "del_btn"), "clicked", G_CALLBACK (delete_button), NULL);
+    g_signal_connect (gtk_builder_get_object (builder, "new_btn"), "clicked", G_CALLBACK (new_button), NULL);
+    g_signal_connect (gtk_builder_get_object (builder, "edit_btn"), "clicked", G_CALLBACK (edit_button), NULL);
+    g_signal_connect (gtk_builder_get_object (builder, "del_btn"), "clicked", G_CALLBACK (delete_button), NULL);
 
     actions = gtk_list_store_new (2, G_TYPE_STRING, G_TYPE_STRING);
     for (i = 1; action_names[i]; i++)
