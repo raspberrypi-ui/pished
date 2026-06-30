@@ -60,22 +60,22 @@ const char *action_names[] = {
 	"Close",
 	"Kill",
 	"Debug",
-	"Execute",              // command
+	"Execute",
 	"Exit",
-	"MoveToEdge",           // direction (lrud) snapWindows
-	"ToggleSnapToEdge",     // direction (lrud + centre)
-	"SnapToEdge",           // direction (lrud + centre)
-	"GrowToEdge",           // direction (lrud)
-	"ShrinkToEdge",         // direction (lrud)
+	"MoveToEdge",           // snapWindows
+	"ToggleSnapToEdge",
+	"SnapToEdge",
+	"GrowToEdge",
+	"ShrinkToEdge",
 	"NextWindow",
 	"PreviousWindow",
 	"Reconfigure",
-	"ShowMenu",             // menu
-	"ToggleMaximize",       // direction (hv both)
-	"Maximize",             // direction (hv both)
-	"UnMaximize",           // direction (hv both)
+	"ShowMenu",
+	"ToggleMaximize",
+	"Maximize",
+	"UnMaximize",
 	"ToggleFullscreen",
-	"SetDecorations",       // decorations(MC) forceSSD
+	"SetDecorations",       // forceSSD
 	"ToggleDecorations",
 	"ToggleAlwaysOnTop",
 	"ToggleAlwaysOnBottom",
@@ -87,25 +87,25 @@ const char *action_names[] = {
 	"Raise",
 	"Lower",
 	"Resize",
-	"ResizeRelative",       // left right up down NOT DIRECTION - separate params
-	"MoveTo",               // x y
-	"ResizeTo",             // width height
+	//"ResizeRelative",       // left right up down
+	//"MoveTo",               // x y
+	//"ResizeTo",             // width height
 	"MoveToCursor",
-	"MoveRelative",         // x y
-	"SendToDesktop",        // to follow wrap
-	"GoToDesktop",          // to wrap
-	"ToggleSnapToRegion",   // region(FT)
-	"SnapToRegion",         // region(FT)
+	//"MoveRelative",         // x y
+	//"SendToDesktop",        // to follow wrap
+	//"GoToDesktop",          // to wrap
+	"ToggleSnapToRegion",
+	"SnapToRegion",
 	"UnSnap",
 	"ToggleKeybinds",
-	"FocusOutput",          // output direction (lrud) wrap
-	"MoveToOutput",         // output direction (lrud) wrap
+	//"FocusOutput",          // output direction (lrud) wrap
+	//"MoveToOutput",         // output direction (lrud) wrap
 	"FitToOutput",
-	"If",                   // !!!!!
-	"ForEach",              // !!!!!
-	"VirtualOutputAdd",     // output_name
-	"VirtualOutputRemove",  // output_remove
-	"AutoPlace",            // policy(MC)
+	//"If",                   // !!!!!
+	//"ForEach",              // !!!!!
+	//"VirtualOutputAdd",     // output_name
+	//"VirtualOutputRemove",  // output_remove
+	"AutoPlace",
 	"ToggleTearing",
 	"Shade",
 	"Unshade",
@@ -119,7 +119,7 @@ const char *action_names[] = {
 	"ToggleMagnify",
 	"ZoomIn",
 	"ZoomOut",
-	"WarpCursor",           // to x y
+	//"WarpCursor",           // to x y
 	"HideCursor",
 	NULL
 };
