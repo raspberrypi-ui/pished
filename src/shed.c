@@ -474,6 +474,7 @@ static void show_editor (char *key, char *act, char *name, char *param)
         g_signal_connect (keyentry, "key-press-event", G_CALLBACK (keypress), NULL);
         g_signal_connect (keyentry, "key-release-event", G_CALLBACK (keyrel), NULL);
         gtk_widget_hide (keylabel);
+        gtk_widget_set_sensitive (se_ok, FALSE);
     }
 
     actcb = (GtkWidget *) gtk_builder_get_object (build, "cb_action");
@@ -737,6 +738,7 @@ static gboolean keypress (GtkWidget *, GdkEventKey *event, gpointer)
 
 static gboolean keyrel (GtkWidget *, GdkEventKey *event, gpointer)
 {
+    gtk_widget_set_sensitive (se_ok, TRUE);
     if (keylog)
     {
         show_keystring (event->keyval, event->state); 
