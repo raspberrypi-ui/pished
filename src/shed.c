@@ -204,6 +204,7 @@ static void edit_ok (GtkWidget *, gpointer);
 static void edit_cancel (GtkWidget *, gpointer);
 static void action_changed (GtkComboBox *cb, gpointer);
 static void preset_changed (GtkComboBox *cb, gpointer);
+static void param_changed (GtkEditable *, gpointer);
 static gboolean keypress (GtkWidget *, GdkEventKey *event, gpointer);
 static gboolean keyrel (GtkWidget *, GdkEventKey *event, gpointer);
 static void show_keystring (guint keycode, guint mods);
@@ -517,6 +518,7 @@ static void show_editor (char *key, char *act, char *name, char *param)
         }
     }
     else gtk_widget_hide (pbox);
+    g_signal_connect (paramentry, "changed", G_CALLBACK (param_changed), NULL);
 
     prescb = (GtkWidget *) gtk_builder_get_object (build, "cb_preset");
     gtk_combo_box_set_model (GTK_COMBO_BOX (prescb), GTK_TREE_MODEL (presets));
@@ -697,6 +699,34 @@ static void preset_changed (GtkComboBox *cb, gpointer)
     gtk_widget_hide (paramcb);
     gtk_widget_show (paramentry);
     gtk_widget_show (pbox);
+}
+
+static void param_changed (GtkEditable *, gpointer)
+{
+    GtkTreeIter iter;
+    char *str;
+
+    gtk_combo_box_get_active_iter (GTK_COMBO_BOX (actcb), &iter);
+    gtk_tree_model_get (GTK_TREE_MODEL (act_sort), &iter, 0, &str, -1);
+    if (!g_strcmp0 (str, "Execute"))
+    {
+        g_free (str);
+        gtk_combo_box_set_active (GTK_COMBO_BOX (prescb), -1);
+        gtk_tree_model_get_iter_first (GTK_TREE_MODEL (presets), &iter);
+        while (1)
+        {
+            gtk_tree_model_get (GTK_TREE_MODEL (presets), &iter, 1, &str, -1);
+            if (!g_strcmp0 (gtk_entry_get_text (GTK_ENTRY (paramentry)), str))
+            {
+                gtk_combo_box_set_active_iter (GTK_COMBO_BOX (prescb), &iter);
+                g_free (str);
+                break;
+            }
+            g_free (str);
+            if (!gtk_tree_model_iter_next (GTK_TREE_MODEL (presets), &iter)) break;
+        }
+    }
+    else g_free (str);
 }
 
 static gboolean keypress (GtkWidget *, GdkEventKey *event, gpointer)
