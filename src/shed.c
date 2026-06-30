@@ -828,7 +828,10 @@ static void init_config (void)
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (tv), -1, _("Parameter"), trend, "text", 3, NULL);
 
     for (i = 0; i < 3; i++)
+    {
         gtk_tree_view_column_set_resizable (gtk_tree_view_get_column (GTK_TREE_VIEW (tv), i), TRUE);
+        gtk_tree_view_column_set_sizing (gtk_tree_view_get_column (GTK_TREE_VIEW (tv), i), GTK_TREE_VIEW_COLUMN_GROW_ONLY);
+    }
 
     g_signal_connect (tv, "button-release-event", G_CALLBACK (tv_button), NULL);
     g_signal_connect ((GtkWidget *) gtk_builder_get_object (builder, "new_btn"), "clicked", G_CALLBACK (new_button), NULL);
