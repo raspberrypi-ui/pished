@@ -917,7 +917,6 @@ static void delete_item (GtkWidget *, gpointer)
 
 static void init_config (void)
 {
-    GtkTreeIter iter;
     GtkCellRenderer *trend;
     char *user_file;
     int i;
@@ -953,56 +952,28 @@ static void init_config (void)
     g_signal_connect (editbtn, "clicked", G_CALLBACK (edit_button), NULL);
     g_signal_connect (delbtn, "clicked", G_CALLBACK (delete_button), NULL);
 
-    actions = gtk_list_store_new (2, G_TYPE_STRING, G_TYPE_STRING);
-    for (i = 1; action_names[i]; i++)
-    {
-        gtk_list_store_append (actions, &iter);
-        gtk_list_store_set (actions, &iter, 0, action_names[i], -1);
-    }
+    actions = gtk_list_store_new (1, G_TYPE_STRING);
+    for (i = 1; action_names[i]; i++) gtk_list_store_insert_with_values (actions, NULL, -1, 0, action_names[i], -1);
     act_sort = gtk_tree_model_sort_new_with_model (GTK_TREE_MODEL (actions));
     gtk_tree_sortable_set_sort_column_id (GTK_TREE_SORTABLE (act_sort), 0, GTK_SORT_ASCENDING);
 
     dirs_lrud = gtk_list_store_new (1, G_TYPE_STRING);
-    for (i = 0; i < 4; i++)
-    {
-        gtk_list_store_append (dirs_lrud, &iter);
-        gtk_list_store_set (dirs_lrud, &iter, 0, lrudc[i], -1);
-    }
+    for (i = 0; i < 4; i++) gtk_list_store_insert_with_values (dirs_lrud, NULL, -1, 0, lrudc[i], -1);
 
     dirs_lrudc = gtk_list_store_new (1, G_TYPE_STRING);
-    for (i = 0; i < 5; i++)
-    {
-        gtk_list_store_append (dirs_lrudc, &iter);
-        gtk_list_store_set (dirs_lrudc, &iter, 0, lrudc[i], -1);
-    }
+    for (i = 0; i < 5; i++) gtk_list_store_insert_with_values (dirs_lrudc, NULL, -1, 0, lrudc[i], -1);
 
     dirs_bhv = gtk_list_store_new (1, G_TYPE_STRING);
-    for (i = 0; i < 3; i++)
-    {
-        gtk_list_store_append (dirs_bhv, &iter);
-        gtk_list_store_set (dirs_bhv, &iter, 0, bhv[i], -1);
-    }
+    for (i = 0; i < 3; i++) gtk_list_store_insert_with_values (dirs_bhv, NULL, -1, 0, bhv[i], -1);
 
     decor = gtk_list_store_new (1, G_TYPE_STRING);
-    for (i = 0; i < 3; i++)
-    {
-        gtk_list_store_append (decor, &iter);
-        gtk_list_store_set (decor, &iter, 0, fbn[i], -1);
-    }
+    for (i = 0; i < 3; i++) gtk_list_store_insert_with_values (decor, NULL, -1, 0, fbn[i], -1);
 
     policy = gtk_list_store_new (1, G_TYPE_STRING);
-    for (i = 0; i < 4; i++)
-    {
-        gtk_list_store_append (policy, &iter);
-        gtk_list_store_set (policy, &iter, 0, accc[i], -1);
-    }
+    for (i = 0; i < 4; i++) gtk_list_store_insert_with_values (policy, NULL, -1, 0, accc[i], -1);
 
     presets = gtk_list_store_new (2, G_TYPE_STRING, G_TYPE_STRING);
-    for (i = 0; i < NPRESETS; i++)
-    {
-        gtk_list_store_append (presets, &iter);
-        gtk_list_store_set (presets, &iter, 0, _(pres[i * 2]), 1, pres[i * 2 + 1], -1);
-    }
+    for (i = 0; i < NPRESETS; i++) gtk_list_store_insert_with_values (presets, NULL, -1, 0, _(pres[i * 2]), 1, pres[i * 2 + 1], -1);
     pre_sort = gtk_tree_model_sort_new_with_model (GTK_TREE_MODEL (presets));
     gtk_tree_sortable_set_sort_column_id (GTK_TREE_SORTABLE (pre_sort), 0, GTK_SORT_ASCENDING);
 
