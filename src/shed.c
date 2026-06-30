@@ -277,9 +277,9 @@ static void read_xml (const char *file)
             node = xpathObj->nodesetval->nodeTab[i];
             for (attr = node->properties; attr; attr = attr->next)
             {
-                if (!g_strcmp0 ((char *) attr->name, "key"))
+                if (!xmlStrcmp (attr->name, XC ("key")))
                     key = g_strdup ((char *) attr->children->content);
-                if (!g_strcmp0 ((char *) attr->name, "onRelease"))
+                if (!xmlStrcmp (attr->name, XC ("onRelease")))
                     if (!g_strcmp0 ((char *) attr->children->content, "yes")) rel = TRUE;
             }
             xpathObj2 = xmlXPathNodeEval (node, XC ("./o:action"), xpathCtx);
@@ -287,11 +287,11 @@ static void read_xml (const char *file)
             {
                 for (attr2 = xpathObj2->nodesetval->nodeTab[0]->properties; attr2; attr2 = attr2->next)
                 {
-                    if (!g_strcmp0 ((char *) attr2->name, "name"))
+                    if (!xmlStrcmp (attr2->name, XC ("name")))
                         act = g_strdup ((char *) attr2->children->content);
-                    if (!g_strcmp0 ((char *) attr2->name, "command") || !g_strcmp0 ((char *) attr2->name, "direction")
-                        || !g_strcmp0 ((char *) attr2->name, "menu") || !g_strcmp0 ((char *) attr2->name, "decorations")
-                        || !g_strcmp0 ((char *) attr2->name, "region")|| !g_strcmp0 ((char *) attr2->name, "policy"))
+                    if (!xmlStrcmp (attr2->name, XC ("command")) || !xmlStrcmp (attr2->name, XC ("direction"))
+                        || !xmlStrcmp (attr2->name, XC ("menu")) || !xmlStrcmp (attr2->name, XC ("decorations"))
+                        || !xmlStrcmp (attr2->name, XC ("region")) || !xmlStrcmp (attr2->name, XC ("policy")))
                     {
                         name = g_strdup ((char *) attr2->name);
                         param = g_strdup ((char *) attr2->children->content);
