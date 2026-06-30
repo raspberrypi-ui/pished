@@ -785,6 +785,7 @@ static void show_keystring (guint keycode, guint mods)
     }
 
     xkb_keysym_get_name (keycode, ptr, sizeof (buf) - (ptr - buf));
+    if (*(ptr + 1) == 0) *ptr = g_ascii_tolower (*ptr);  // labwc wants lower-case single letters
 
     gtk_entry_set_text (GTK_ENTRY (keyentry), buf);
 }
