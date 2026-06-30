@@ -154,20 +154,20 @@ const char *accc[] = {
 #define NPRESETS 14
 
 const char *pres[NPRESETS * 2] = {
-    "Volume increase",          "wfpanelctl volumepulse volu",
-    "Volume decrease",          "wfpanelctl volumepulse vold",
-    "Volume mute",              "wfpanelctl volumepulse mute",
-    "Show main menu",           "wfpanelctl smenu menu",
-    "Show network menu",        "wfpanelctl netman menu",
-    "Show Bluetooth menu",      "wfpanelctl bluetooth menu",
-    "Show icon launcher",       "wfpanelctl nmenu menu",
-    "Capture entire screen",    "gui-screenshot",
-    "Capture part of screen",   "gui-screenshot -a",
-    "Run command",              "gui-runcmd",
-    "Install screen reader",    "gui-pkinst orca reboot",
-    "Show shutdown options",    "pishutdown",
-    "Lock screen",              "swaylock -p",
-    "Open terminal"             "lxterminal"
+    N_("Volume increase"),          "wfpanelctl volumepulse volu",
+    N_("Volume decrease"),          "wfpanelctl volumepulse vold",
+    N_("Volume mute"),              "wfpanelctl volumepulse mute",
+    N_("Show main menu"),           "wfpanelctl smenu menu",
+    N_("Show network menu"),        "wfpanelctl netman menu",
+    N_("Show Bluetooth menu"),      "wfpanelctl bluetooth menu",
+    N_("Show icon launcher"),       "wfpanelctl nmenu menu",
+    N_("Capture entire screen"),    "gui-screenshot",
+    N_("Capture part of screen"),   "gui-screenshot -a",
+    N_("Run command"),              "gui-runcmd",
+    N_("Install screen reader"),    "gui-pkinst orca reboot",
+    N_("Show shutdown options"),    "pishutdown",
+    N_("Lock screen"),              "swaylock -p",
+    N_("Open terminal"),            "lxterminal"
 };
 
 /*----------------------------------------------------------------------------*/
@@ -185,7 +185,7 @@ static wm_type wm;
 static GtkWidget *tv, *newbtn, *editbtn, *delbtn;
 static GtkWidget *se, *se_ok, *se_can, *keyentry, *keylabel, *actcb, *pbox, *paramlbl, *paramentry, *paramcb, *prescb;
 static GtkListStore *bindings, *actions, *dirs_lrud, *dirs_lrudc, *dirs_bhv, *decor, *policy, *presets;
-static GtkTreeModel *bind_sort, *act_sort;
+static GtkTreeModel *bind_sort, *act_sort, *pre_sort;
 static GtkTreeIter miter;
 static gboolean keylog = FALSE;
 
@@ -524,14 +524,14 @@ static void show_editor (char *key, char *act, char *name, char *param)
     g_signal_connect (paramentry, "changed", G_CALLBACK (param_changed), NULL);
 
     prescb = (GtkWidget *) gtk_builder_get_object (build, "cb_preset");
-    gtk_combo_box_set_model (GTK_COMBO_BOX (prescb), GTK_TREE_MODEL (presets));
+    gtk_combo_box_set_model (GTK_COMBO_BOX (prescb), GTK_TREE_MODEL (pre_sort));
     gtk_combo_box_set_active (GTK_COMBO_BOX (prescb), -1);
     if (!g_strcmp0 (act, "Execute") && !g_strcmp0 (name, "command") && param)
     {
-        gtk_tree_model_get_iter_first (GTK_TREE_MODEL (presets), &iter);
+        gtk_tree_model_get_iter_first (GTK_TREE_MODEL (pre_sort), &iter);
         while (1)
         {
-            gtk_tree_model_get (GTK_TREE_MODEL (presets), &iter, 1, &str, -1);
+            gtk_tree_model_get (GTK_TREE_MODEL (pre_sort), &iter, 1, &str, -1);
             if (!g_strcmp0 (param, str))
             {
                 gtk_combo_box_set_active_iter (GTK_COMBO_BOX (prescb), &iter);
@@ -539,7 +539,7 @@ static void show_editor (char *key, char *act, char *name, char *param)
                 break;
             }
             g_free (str);
-            if (!gtk_tree_model_iter_next (GTK_TREE_MODEL (presets), &iter)) break;
+            if (!gtk_tree_model_iter_next (GTK_TREE_MODEL (pre_sort), &iter)) break;
         }
     }
     g_signal_connect (prescb, "changed", G_CALLBACK (preset_changed), NULL);
@@ -694,7 +694,7 @@ static void preset_changed (GtkComboBox *cb, gpointer)
     GtkTreeIter iter;
 
     if (!gtk_combo_box_get_active_iter (GTK_COMBO_BOX (cb), &iter)) return;
-    gtk_tree_model_get (GTK_TREE_MODEL (presets), &iter, 1, &str, -1);
+    gtk_tree_model_get (GTK_TREE_MODEL (pre_sort), &iter, 1, &str, -1);
 
     init_combo (GTK_COMBO_BOX (actcb), "Execute");
     gtk_label_set_text (GTK_LABEL (paramlbl), "Command:");
@@ -715,10 +715,10 @@ static void param_changed (GtkEditable *, gpointer)
     {
         g_free (str);
         gtk_combo_box_set_active (GTK_COMBO_BOX (prescb), -1);
-        gtk_tree_model_get_iter_first (GTK_TREE_MODEL (presets), &iter);
+        gtk_tree_model_get_iter_first (GTK_TREE_MODEL (pre_sort), &iter);
         while (1)
         {
-            gtk_tree_model_get (GTK_TREE_MODEL (presets), &iter, 1, &str, -1);
+            gtk_tree_model_get (GTK_TREE_MODEL (pre_sort), &iter, 1, &str, -1);
             if (!g_strcmp0 (gtk_entry_get_text (GTK_ENTRY (paramentry)), str))
             {
                 gtk_combo_box_set_active_iter (GTK_COMBO_BOX (prescb), &iter);
@@ -726,7 +726,7 @@ static void param_changed (GtkEditable *, gpointer)
                 break;
             }
             g_free (str);
-            if (!gtk_tree_model_iter_next (GTK_TREE_MODEL (presets), &iter)) break;
+            if (!gtk_tree_model_iter_next (GTK_TREE_MODEL (pre_sort), &iter)) break;
         }
     }
     else g_free (str);
@@ -1001,8 +1001,10 @@ static void init_config (void)
     for (i = 0; i < NPRESETS; i++)
     {
         gtk_list_store_append (presets, &iter);
-        gtk_list_store_set (presets, &iter, 0, pres[i * 2], 1, pres[i * 2 + 1], -1);
+        gtk_list_store_set (presets, &iter, 0, _(pres[i * 2]), 1, pres[i * 2 + 1], -1);
     }
+    pre_sort = gtk_tree_model_sort_new_with_model (GTK_TREE_MODEL (presets));
+    gtk_tree_sortable_set_sort_column_id (GTK_TREE_SORTABLE (pre_sort), 0, GTK_SORT_ASCENDING);
 
     user_file = g_build_filename (g_get_user_config_dir (), "labwc/rc.xml", NULL);
     read_xml ("/etc/xdg/labwc/rc.xml");
