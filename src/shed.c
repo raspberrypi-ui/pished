@@ -279,8 +279,7 @@ static void read_xml (const char *file)
             {
                 if (!xmlStrcmp (attr->name, XC ("key")))
                     key = g_strdup ((char *) attr->children->content);
-                if (!xmlStrcmp (attr->name, XC ("onRelease")))
-                    if (!g_strcmp0 ((char *) attr->children->content, "yes")) rel = TRUE;
+                if (!xmlStrcmp (attr->name, XC ("onRelease")) && !xmlStrcmp (attr->children->content, XC ("yes"))) rel = TRUE;
             }
             xpathObj2 = xmlXPathNodeEval (node, XC ("./o:action"), xpathCtx);
             if (!xmlXPathNodeSetIsEmpty (xpathObj2->nodesetval))
