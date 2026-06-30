@@ -182,7 +182,8 @@ static GtkWidget *main_dlg;
 /* Flag to indicate window manager in use */
 static wm_type wm;
 
-static GtkWidget *tv, *se, *se_ok, *se_can, *keyentry, *keylabel, *actcb, *pbox, *paramlbl, *paramentry, *paramcb, *prescb;
+static GtkWidget *tv, *newbtn, *editbtn, *delbtn;
+static GtkWidget *se, *se_ok, *se_can, *keyentry, *keylabel, *actcb, *pbox, *paramlbl, *paramentry, *paramcb, *prescb;
 static GtkListStore *bindings, *actions, *dirs_lrud, *dirs_lrudc, *dirs_bhv, *decor, *policy, *presets;
 static GtkTreeModel *bind_sort, *act_sort;
 static GtkTreeIter miter;
@@ -212,6 +213,7 @@ static void new_button (GtkWidget *, gpointer);
 static void edit_button (GtkWidget *, gpointer);
 static void delete_button (GtkWidget *, gpointer);
 static gboolean tv_button (GtkWidget *wid, GdkEventButton *event, gpointer);
+static void tv_cursor (GtkTreeView *tv, gpointer);
 static void edit_item (GtkWidget *, gpointer);
 static void delete_item (GtkWidget *, gpointer);
 static void init_config (void);
@@ -871,6 +873,20 @@ static gboolean tv_button (GtkWidget *wid, GdkEventButton *event, gpointer)
     return FALSE;
 }
 
+static void tv_cursor (GtkTreeView *tv, gpointer)
+{
+    GtkTreePath *path;
+    gboolean sens = FALSE;
+    gtk_tree_view_get_cursor (tv, &path, NULL);
+    if (path)
+    {
+        sens = TRUE;
+        gtk_tree_path_free (path);
+    }
+    gtk_widget_set_sensitive (editbtn, sens);
+    gtk_widget_set_sensitive (delbtn, sens);
+}
+
 static void edit_item (GtkWidget *, gpointer)
 {
     char *key, *act, *name, *param;
@@ -911,6 +927,12 @@ static void init_config (void)
     gtk_tree_sortable_set_sort_column_id (GTK_TREE_SORTABLE (bind_sort), 0, GTK_SORT_ASCENDING);
 
     tv = (GtkWidget *) gtk_builder_get_object (builder, "shortcuts_tv");
+    newbtn = (GtkWidget *) gtk_builder_get_object (builder, "new_btn");
+    editbtn = (GtkWidget *) gtk_builder_get_object (builder, "edit_btn");
+    delbtn = (GtkWidget *) gtk_builder_get_object (builder, "del_btn");
+    gtk_widget_set_sensitive (editbtn, FALSE);
+    gtk_widget_set_sensitive (delbtn, FALSE);
+
     gtk_tree_view_set_model (GTK_TREE_VIEW (tv), bind_sort);
 
     trend = gtk_cell_renderer_text_new ();
@@ -926,9 +948,10 @@ static void init_config (void)
     }
 
     g_signal_connect (tv, "button-release-event", G_CALLBACK (tv_button), NULL);
-    g_signal_connect (gtk_builder_get_object (builder, "new_btn"), "clicked", G_CALLBACK (new_button), NULL);
-    g_signal_connect (gtk_builder_get_object (builder, "edit_btn"), "clicked", G_CALLBACK (edit_button), NULL);
-    g_signal_connect (gtk_builder_get_object (builder, "del_btn"), "clicked", G_CALLBACK (delete_button), NULL);
+    g_signal_connect (tv, "cursor-changed", G_CALLBACK (tv_cursor), NULL);
+    g_signal_connect (newbtn, "clicked", G_CALLBACK (new_button), NULL);
+    g_signal_connect (editbtn, "clicked", G_CALLBACK (edit_button), NULL);
+    g_signal_connect (delbtn, "clicked", G_CALLBACK (delete_button), NULL);
 
     actions = gtk_list_store_new (2, G_TYPE_STRING, G_TYPE_STRING);
     for (i = 1; action_names[i]; i++)
