@@ -92,7 +92,7 @@ static struct key_combos {
 			.value = "down",
 		},
 	}, {
-		.binding = "A-Space",
+		.binding = "A-space",
 		.action = "ShowMenu",
 		.attributes[0] = {
 			.name = "menu",

@@ -55,73 +55,73 @@ wm_type;
 #define XC(str) ((xmlChar *) str)
 
 const char *action_names[] = {
-	"INVALID",
-	"None",
-	"Close",
-	"Kill",
-	"Debug",
-	"Execute",
-	"Exit",
-	"MoveToEdge",           // snapWindows
-	"ToggleSnapToEdge",
-	"SnapToEdge",
-	"GrowToEdge",
-	"ShrinkToEdge",
-	"NextWindow",
-	"PreviousWindow",
-	"Reconfigure",
-	"ShowMenu",
-	"ToggleMaximize",
-	"Maximize",
-	"UnMaximize",
-	"ToggleFullscreen",
-	"SetDecorations",       // forceSSD
-	"ToggleDecorations",
-	"ToggleAlwaysOnTop",
-	"ToggleAlwaysOnBottom",
-	"ToggleOmnipresent",
-	"Focus",
-	"Unfocus",
-	"Iconify",
-	"Move",
-	"Raise",
-	"Lower",
-	"Resize",
-	//"ResizeRelative",       // left right up down
-	//"MoveTo",               // x y
-	//"ResizeTo",             // width height
-	"MoveToCursor",
-	//"MoveRelative",         // x y
-	//"SendToDesktop",        // to follow wrap
-	//"GoToDesktop",          // to wrap
-	"ToggleSnapToRegion",
-	"SnapToRegion",
-	"UnSnap",
-	"ToggleKeybinds",
-	//"FocusOutput",          // output direction (lrud) wrap
-	//"MoveToOutput",         // output direction (lrud) wrap
-	"FitToOutput",
-	//"If",                   // !!!!!
-	//"ForEach",              // !!!!!
-	//"VirtualOutputAdd",     // output_name
-	//"VirtualOutputRemove",  // output_remove
-	"AutoPlace",
-	"ToggleTearing",
-	"Shade",
-	"Unshade",
-	"ToggleShade",
-	"EnableScrollWheelEmulation",
-	"DisableScrollWheelEmulation",
-	"ToggleScrollWheelEmulation",
-	"EnableTabletMouseEmulation",
-	"DisableTabletMouseEmulation",
-	"ToggleTabletMouseEmulation",
-	"ToggleMagnify",
-	"ZoomIn",
-	"ZoomOut",
-	//"WarpCursor",           // to x y
-	"HideCursor",
-	NULL
+    "INVALID",
+    "None",
+    "Close",
+    "Kill",
+    "Debug",
+    "Execute",
+    "Exit",
+    "MoveToEdge",           // snapWindows
+    "ToggleSnapToEdge",
+    "SnapToEdge",
+    "GrowToEdge",
+    "ShrinkToEdge",
+    "NextWindow",
+    "PreviousWindow",
+    "Reconfigure",
+    "ShowMenu",
+    "ToggleMaximize",
+    "Maximize",
+    "UnMaximize",
+    "ToggleFullscreen",
+    "SetDecorations",       // forceSSD
+    "ToggleDecorations",
+    "ToggleAlwaysOnTop",
+    "ToggleAlwaysOnBottom",
+    "ToggleOmnipresent",
+    "Focus",
+    "Unfocus",
+    "Iconify",
+    "Move",
+    "Raise",
+    "Lower",
+    "Resize",
+    //"ResizeRelative",       // left right up down
+    //"MoveTo",               // x y
+    //"ResizeTo",             // width height
+    "MoveToCursor",
+    //"MoveRelative",         // x y
+    //"SendToDesktop",        // to follow wrap
+    //"GoToDesktop",          // to wrap
+    "ToggleSnapToRegion",
+    "SnapToRegion",
+    "UnSnap",
+    "ToggleKeybinds",
+    //"FocusOutput",          // output direction (lrud) wrap
+    //"MoveToOutput",         // output direction (lrud) wrap
+    "FitToOutput",
+    //"If",                   // !!!!!
+    //"ForEach",              // !!!!!
+    //"VirtualOutputAdd",     // output_name
+    //"VirtualOutputRemove",  // output_remove
+    "AutoPlace",
+    "ToggleTearing",
+    "Shade",
+    "Unshade",
+    "ToggleShade",
+    "EnableScrollWheelEmulation",
+    "DisableScrollWheelEmulation",
+    "ToggleScrollWheelEmulation",
+    "EnableTabletMouseEmulation",
+    "DisableTabletMouseEmulation",
+    "ToggleTabletMouseEmulation",
+    "ToggleMagnify",
+    "ZoomIn",
+    "ZoomOut",
+    //"WarpCursor",           // to x y
+    "HideCursor",
+    NULL
 };
 
 const char *lrudc[] = {
@@ -192,6 +192,7 @@ static gboolean keylog = FALSE;
 static void check_directory (const char *path);
 static void read_xml (const char *file);
 static void read_defaults (void);
+static char *decamel (const char *in);
 static void add_or_replace (GtkListStore *ls, const char *key, const char *act, const char *name, const char *param, gboolean rel);
 static void write_xml (const char *key, const char *act, const char *name, const char *param, gboolean rel);
 static void reload_bindings (void);
@@ -317,11 +318,31 @@ static void read_xml (const char *file)
 
 static void read_defaults (void)
 {
-	for (int i = 0; key_combos[i].binding; i++)
+    for (int i = 0; key_combos[i].binding; i++)
     {
-		struct key_combos *current = &key_combos[i];
+        struct key_combos *current = &key_combos[i];
         add_or_replace (bindings, current->binding, current->action, current->attributes[0].name, current->attributes[0].value, FALSE);
     }
+}
+
+static char *decamel (const char *in)
+{
+    char *out = NULL, *tmp;
+
+    while (*in)
+    {
+        tmp = out;
+        if (tmp == NULL)
+            out = g_strdup_printf ("%c", *in);
+        else if (*in >= 'A' && *in <= 'Z')
+            out = g_strdup_printf ("%s %c", tmp, *in);
+        else
+            out = g_strdup_printf ("%s%c", tmp, *in);
+        g_free (tmp);
+        in++;
+    }
+
+    return out;
 }
 
 static void add_or_replace (GtkListStore *ls, const char *key, const char *act, const char *name, const char *param, gboolean rel)
@@ -349,10 +370,12 @@ static void add_or_replace (GtkListStore *ls, const char *key, const char *act, 
         }
     }
 
-    if (!desc)
+    if (act && !desc)
     {
-        if (param && param[0]) desc = g_strdup_printf ("%s (%s)", act, param);
-        else desc = g_strdup (act);
+        str = decamel (act);
+        if (param && param[0]) desc = g_strdup_printf ("%s '%s'", str, param);
+        else desc = g_strdup (str);
+        g_free (str);
     }
 
     valid = gtk_tree_model_get_iter_first (GTK_TREE_MODEL (bindings), &iter);
@@ -617,7 +640,7 @@ static void edit_ok (GtkWidget *, gpointer)
     if (gtk_widget_is_visible (keyentry)) key = gtk_entry_get_text (GTK_ENTRY (keyentry));
     else key = gtk_label_get_text (GTK_LABEL (keylabel));
 
-	rel = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (relchk));
+    rel = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (relchk));
 
     gtk_combo_box_get_active_iter (GTK_COMBO_BOX (actcb), &iter);
     gtk_tree_model_get (GTK_TREE_MODEL (act_sort), &iter, 0, &act, -1);
