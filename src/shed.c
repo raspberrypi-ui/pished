@@ -1033,6 +1033,7 @@ static void init_config (void)
     {
         gtk_tree_view_column_set_resizable (gtk_tree_view_get_column (GTK_TREE_VIEW (tv), i), TRUE);
         gtk_tree_view_column_set_sizing (gtk_tree_view_get_column (GTK_TREE_VIEW (tv), i), GTK_TREE_VIEW_COLUMN_GROW_ONLY);
+        gtk_tree_view_column_set_sort_column_id (gtk_tree_view_get_column (GTK_TREE_VIEW (tv), i), i == 0 ? 0 : 5);
     }
 
     g_signal_connect (tv, "button-release-event", G_CALLBACK (tv_button), NULL);
