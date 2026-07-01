@@ -178,7 +178,7 @@ const char *pres[NPRESETS * 2] = {
 static wm_type wm;
 
 static GtkBuilder *builder;
-static GtkWidget *main_dlg, *tv, *newbtn, *editbtn, *delbtn, *conf;
+static GtkWidget *main_dlg, *tv, *newbtn, *editbtn, *delbtn, *hlpbtn, *conf;
 static GtkWidget *se, *se_ok, *se_can, *keyentry, *keylabel, *actcb, *pbox, *paramlbl, *paramentry, *paramcb, *prescb, *relchk;
 static GtkListStore *bindings, *actions, *dirs_lrud, *dirs_lrudc, *dirs_bhv, *decor, *policy, *presets;
 static GtkTreeModel *bind_sort, *act_sort, *pre_sort;
@@ -894,6 +894,11 @@ static void delete_button (GtkWidget *, gpointer)
     }
 }
 
+static void help_button (GtkWidget *, gpointer)
+{
+    system ("xdg-open https://labwc.github.io/labwc-actions.5.html");
+}
+
 static gboolean tv_button (GtkWidget *wid, GdkEventButton *event, gpointer)
 {
     GtkWidget *menu, *item;
@@ -1019,6 +1024,7 @@ static void init_config (void)
     newbtn = (GtkWidget *) gtk_builder_get_object (builder, "new_btn");
     editbtn = (GtkWidget *) gtk_builder_get_object (builder, "edit_btn");
     delbtn = (GtkWidget *) gtk_builder_get_object (builder, "del_btn");
+    hlpbtn = (GtkWidget *) gtk_builder_get_object (builder, "help_btn");
     gtk_widget_set_sensitive (editbtn, FALSE);
     gtk_widget_set_sensitive (delbtn, FALSE);
 
@@ -1041,6 +1047,7 @@ static void init_config (void)
     g_signal_connect (newbtn, "clicked", G_CALLBACK (new_button), NULL);
     g_signal_connect (editbtn, "clicked", G_CALLBACK (edit_button), NULL);
     g_signal_connect (delbtn, "clicked", G_CALLBACK (delete_button), NULL);
+    g_signal_connect (hlpbtn, "clicked", G_CALLBACK (help_button), NULL);
 
     actions = gtk_list_store_new (1, G_TYPE_STRING);
     for (i = 1; action_names[i]; i++) gtk_list_store_insert_with_values (actions, NULL, -1, 0, action_names[i], -1);
