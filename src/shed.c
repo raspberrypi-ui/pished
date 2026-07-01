@@ -351,6 +351,7 @@ static void add_or_replace (GtkListStore *ls, const char *key, const char *act, 
     gboolean valid;
     char *str, *lbl, *desc = NULL;
 
+    // look for a preset which matches this action if it is an Execute, and use it as the description
     if (!g_strcmp0 (act, "Execute") && !g_strcmp0 (name, "command") && param)
     {
         gtk_tree_model_get_iter_first (GTK_TREE_MODEL (pre_sort), &iter);
@@ -370,6 +371,7 @@ static void add_or_replace (GtkListStore *ls, const char *key, const char *act, 
         }
     }
 
+    // otherwise create a description from the camel case action name
     if (act && !desc)
     {
         str = decamel (act);
@@ -382,7 +384,7 @@ static void add_or_replace (GtkListStore *ls, const char *key, const char *act, 
     while (valid)
     {
         gtk_tree_model_get (GTK_TREE_MODEL (bindings), &iter, 0, &str, -1);
-        if (!g_strcmp0 (str, key))
+        if (!g_ascii_strcasecmp (str, key))
         {
             if (act) gtk_list_store_set (bindings, &iter, 0, key, 1, act, 2, name, 3, param, 4, rel, 5, desc, -1);
             else gtk_list_store_remove (bindings, &iter);
