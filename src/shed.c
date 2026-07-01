@@ -209,6 +209,7 @@ static void show_keystring (guint keycode, guint mods);
 static void new_button (GtkWidget *, gpointer);
 static void edit_button (GtkWidget *, gpointer);
 static void delete_button (GtkWidget *, gpointer);
+static void help_button (GtkWidget *, gpointer);
 static gboolean tv_button (GtkWidget *wid, GdkEventButton *event, gpointer);
 static void tv_cursor (GtkTreeView *tv, gpointer);
 static void edit_item (GtkWidget *, gpointer);
@@ -898,7 +899,7 @@ static void delete_button (GtkWidget *, gpointer)
 
 static void help_button (GtkWidget *, gpointer)
 {
-    system ("xdg-open https://labwc.github.io/labwc-actions.5.html");
+    system ("xdg-open https://labwc.github.io/labwc-actions.5.html &");
 }
 
 static gboolean tv_button (GtkWidget *wid, GdkEventButton *event, gpointer)
