@@ -1,4 +1,4 @@
-project ('shed','c')
+project ('pished','c')
 
 build_standalone = false
 build_plugin = true

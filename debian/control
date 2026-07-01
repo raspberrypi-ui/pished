@@ -1,0 +1,13 @@
+Source: pished
+Section: x11
+Priority: optional
+Maintainer: Simon Long <simon@raspberrypi.com>
+Build-Depends: debhelper-compat (= 13), meson, libgtk-3-dev (>= 3.24), libxml2-dev, intltool (>= 0.40.0)
+Standards-Version: 4.5.1
+Homepage: http://raspberrypi.com/
+
+Package: pished
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Shortcut editor for Raspberry Pi Control Centre
+ Keyboard binding editor for labwc keybindings
