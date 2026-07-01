@@ -54,6 +54,19 @@ wm_type;
 
 #define XC(str) ((xmlChar *) str)
 
+#define NPRESETS 14
+
+#define KB_KEY      0
+#define KB_ACTION   1
+#define KB_NAME     2
+#define KB_ARG      3
+#define KB_REL      4
+#define KB_LABEL    5
+
+/*----------------------------------------------------------------------------*/
+/* Global data                                                                */
+/*----------------------------------------------------------------------------*/
+
 const char *action_names[] = {
     "INVALID",
     "None",
@@ -151,8 +164,6 @@ const char *accc[] = {
     "cascade"
 };
 
-#define NPRESETS 14
-
 const char *pres[NPRESETS * 2] = {
     N_("Volume Increase"),          "wfpanelctl volumepulse volu",
     N_("Volume Decrease"),          "wfpanelctl volumepulse vold",
@@ -169,10 +180,6 @@ const char *pres[NPRESETS * 2] = {
     N_("Lock Screen"),              "swaylock -p",
     N_("Open Terminal"),            "lxterminal"
 };
-
-/*----------------------------------------------------------------------------*/
-/* Global data                                                                */
-/*----------------------------------------------------------------------------*/
 
 /* Flag to indicate window manager in use */
 static wm_type wm;
@@ -384,11 +391,14 @@ static void add_or_replace (GtkListStore *ls, const char *key, const char *act, 
     valid = gtk_tree_model_get_iter_first (GTK_TREE_MODEL (bindings), &iter);
     while (valid)
     {
-        gtk_tree_model_get (GTK_TREE_MODEL (bindings), &iter, 0, &str, -1);
+        gtk_tree_model_get (GTK_TREE_MODEL (bindings), &iter, KB_KEY, &str, -1);
         if (!g_ascii_strcasecmp (str, key))
         {
-            if (act) gtk_list_store_set (bindings, &iter, 0, key, 1, act, 2, name, 3, param, 4, rel, 5, desc, -1);
-            else gtk_list_store_remove (bindings, &iter);
+            if (act)
+                gtk_list_store_set (bindings, &iter, KB_KEY, key, KB_ACTION, act, KB_NAME, name,
+                    KB_ARG, param, KB_REL, rel, KB_LABEL, desc, -1);
+            else
+                gtk_list_store_remove (bindings, &iter);
             g_free (str);
             return;
         }
@@ -396,7 +406,9 @@ static void add_or_replace (GtkListStore *ls, const char *key, const char *act, 
         valid = gtk_tree_model_iter_next (GTK_TREE_MODEL (bindings), &iter);
     }
 
-    if (act) gtk_list_store_insert_with_values (bindings, NULL, -1, 0, key, 1, act, 2, name, 3, param, 4, rel, 5, desc, -1);
+    if (act)
+        gtk_list_store_insert_with_values (bindings, NULL, -1, KB_KEY, key, KB_ACTION, act, KB_NAME, name,
+            KB_ARG, param, KB_REL, rel, KB_LABEL, desc, -1);
 
     g_free (desc);
 }
@@ -958,7 +970,8 @@ static void edit_item (GtkWidget *, gpointer)
     char *key, *act, *name, *param;
     gboolean rel;
 
-    gtk_tree_model_get (GTK_TREE_MODEL (bindings), &miter, 0, &key, 1, &act, 2, &name, 3, &param, 4, &rel, -1);
+    gtk_tree_model_get (GTK_TREE_MODEL (bindings), &miter, KB_KEY, &key, KB_ACTION, &act,
+        KB_NAME, &name, KB_ARG, &param, KB_REL, &rel, -1);
     show_editor (key, act, name, param, rel);
 
     g_free (key);
@@ -997,7 +1010,7 @@ static void conf_ok (GtkButton *, gpointer)
 
     gtk_widget_destroy (conf);
 
-    gtk_tree_model_get (GTK_TREE_MODEL (bindings), &miter, 0, &key, -1);
+    gtk_tree_model_get (GTK_TREE_MODEL (bindings), &miter, KB_KEY, &key, -1);
     write_xml (key, NULL, NULL, NULL, FALSE);
     g_free (key);
 
@@ -1035,14 +1048,14 @@ static void init_config (void)
 
     trend = gtk_cell_renderer_text_new ();
 
-    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (tv), -1, _("Key"), trend, "text", 0, NULL);
-    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (tv), -1, _("Function"), trend, "text", 5, NULL);
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (tv), -1, _("Key"), trend, "text", KB_KEY, NULL);
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (tv), -1, _("Function"), trend, "text", KB_LABEL, NULL);
 
     for (i = 0; i < 2; i++)
     {
         gtk_tree_view_column_set_resizable (gtk_tree_view_get_column (GTK_TREE_VIEW (tv), i), TRUE);
         gtk_tree_view_column_set_sizing (gtk_tree_view_get_column (GTK_TREE_VIEW (tv), i), GTK_TREE_VIEW_COLUMN_GROW_ONLY);
-        gtk_tree_view_column_set_sort_column_id (gtk_tree_view_get_column (GTK_TREE_VIEW (tv), i), i == 0 ? 0 : 5);
+        gtk_tree_view_column_set_sort_column_id (gtk_tree_view_get_column (GTK_TREE_VIEW (tv), i), i == 0 ? KB_KEY : KB_LABEL);
     }
 
     g_signal_connect (tv, "button-release-event", G_CALLBACK (tv_button), NULL);
