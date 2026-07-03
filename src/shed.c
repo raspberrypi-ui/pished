@@ -528,6 +528,7 @@ static void show_editor (char *key, char *act, char *name, char *param, gboolean
     textdomain (GETTEXT_PACKAGE);
     build = gtk_builder_new_from_file (PACKAGE_DATA_DIR "/ui/shed.ui");
     se = (GtkWidget *) gtk_builder_get_object (build, "shedit");
+    gtk_window_set_transient_for (GTK_WINDOW (se), GTK_WINDOW (main_dlg));
     gtk_widget_show_all (se);
 
     se_ok = (GtkWidget *) gtk_builder_get_object (build, "btn_ok");
