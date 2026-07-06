@@ -217,7 +217,7 @@ static void new_button (GtkWidget *, gpointer);
 static void edit_button (GtkWidget *, gpointer);
 static void delete_button (GtkWidget *, gpointer);
 static void help_button (GtkWidget *, gpointer);
-static gboolean tv_button (GtkWidget *wid, GdkEventButton *event, gpointer);
+static gboolean tv_button (GtkWidget *wid, GdkEventButton event, gpointer);
 static void tv_cursor (GtkTreeView *tv, gpointer);
 static void edit_item (GtkWidget *, gpointer);
 static void delete_item (GtkWidget *, gpointer);
@@ -915,15 +915,15 @@ static void help_button (GtkWidget *, gpointer)
     system ("xdg-open https://labwc.github.io/labwc-actions.5.html &");
 }
 
-static gboolean tv_button (GtkWidget *wid, GdkEventButton *event, gpointer)
+static gboolean tv_button (GtkWidget *wid, GdkEventButton event, gpointer)
 {
     GtkWidget *menu, *item;
     GtkTreeIter iter;
     GtkTreePath *path;
 
-    if (event->button == 3)
+    if (event.type == GDK_BUTTON_PRESS && event.button == 3)
     {
-        if (gtk_tree_view_get_path_at_pos (GTK_TREE_VIEW (tv), event->x, event->y, &path, NULL, NULL, NULL))
+        if (gtk_tree_view_get_path_at_pos (GTK_TREE_VIEW (tv), event.x, event.y, &path, NULL, NULL, NULL))
         {
             gtk_tree_model_get_iter (bind_sort, &iter, path);
             gtk_tree_model_sort_convert_iter_to_child_iter (GTK_TREE_MODEL_SORT (bind_sort), &miter, &iter);
@@ -1059,7 +1059,7 @@ static void init_config (void)
         gtk_tree_view_column_set_sort_column_id (gtk_tree_view_get_column (GTK_TREE_VIEW (tv), i), i == 0 ? KB_KEY : KB_LABEL);
     }
 
-    g_signal_connect (tv, "button-release-event", G_CALLBACK (tv_button), NULL);
+    g_signal_connect (tv, "button-press-event", G_CALLBACK (tv_button), NULL);
     g_signal_connect (tv, "cursor-changed", G_CALLBACK (tv_cursor), NULL);
     g_signal_connect (newbtn, "clicked", G_CALLBACK (new_button), NULL);
     g_signal_connect (editbtn, "clicked", G_CALLBACK (edit_button), NULL);
