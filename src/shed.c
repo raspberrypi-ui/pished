@@ -193,6 +193,7 @@ static GtkTreeIter miter;
 static gboolean keylog = FALSE;
 static gboolean pressed;
 static double press_x, press_y;
+static char *app_id;
 
 /*----------------------------------------------------------------------------*/
 /* Prototypes                                                                 */
@@ -207,6 +208,7 @@ static void write_xml (const char *key, const char *act, const char *name, const
 static void reload_bindings (void);
 static void show_editor (char *key, char *act, char *name, char *param, gboolean rel);
 static void init_combo (GtkComboBox *cb, const char *init);
+static gboolean reset_appid (GtkWidget *, GdkEvent *, gpointer);
 static void edit_ok (GtkWidget *, gpointer);
 static void edit_cancel (GtkWidget *, gpointer);
 static void action_changed (GtkComboBox *cb, gpointer);
@@ -534,6 +536,10 @@ static void show_editor (char *key, char *act, char *name, char *param, gboolean
     build = gtk_builder_new_from_file (PACKAGE_DATA_DIR "/ui/shed.ui");
     se = (GtkWidget *) gtk_builder_get_object (build, "shedit");
     gtk_window_set_transient_for (GTK_WINDOW (se), GTK_WINDOW (main_dlg));
+
+    app_id = g_strdup (g_get_prgname ());
+    g_set_prgname ("pished_edit_shortcut");
+
     gtk_widget_show_all (se);
 
     se_ok = (GtkWidget *) gtk_builder_get_object (build, "btn_ok");
@@ -626,8 +632,17 @@ static void show_editor (char *key, char *act, char *name, char *param, gboolean
     g_signal_connect (se_ok, "clicked", G_CALLBACK (edit_ok), NULL);
     g_signal_connect (se_can, "clicked", G_CALLBACK (edit_cancel), NULL);
 
+    g_signal_connect (se, "destroy", G_CALLBACK (reset_appid), NULL);
+
     gtk_window_present (GTK_WINDOW (se));
     g_object_unref (build);
+}
+
+static gboolean reset_appid (GtkWidget *, GdkEvent *, gpointer)
+{
+    g_set_prgname (app_id);
+    g_free (app_id);
+    return FALSE;
 }
 
 static void init_combo (GtkComboBox *cb, const char *init)
