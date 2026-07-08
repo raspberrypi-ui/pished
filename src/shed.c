@@ -538,7 +538,7 @@ static void show_editor (char *key, char *act, char *name, char *param, gboolean
     gtk_window_set_transient_for (GTK_WINDOW (se), GTK_WINDOW (main_dlg));
 
     app_id = g_strdup (g_get_prgname ());
-    g_set_prgname ("pished_edit_shortcut");
+    if (!key) g_set_prgname ("pished_edit_shortcut");
 
     gtk_widget_show_all (se);
 
