@@ -191,6 +191,8 @@ static GtkListStore *bindings, *actions, *dirs_lrud, *dirs_lrudc, *dirs_bhv, *de
 static GtkTreeModel *bind_sort, *act_sort, *pre_sort;
 static GtkTreeIter miter;
 static gboolean keylog = FALSE;
+static gboolean pressed;
+static double press_x, press_y;
 
 /*----------------------------------------------------------------------------*/
 /* Prototypes                                                                 */
@@ -217,7 +219,10 @@ static void new_button (GtkWidget *, gpointer);
 static void edit_button (GtkWidget *, gpointer);
 static void delete_button (GtkWidget *, gpointer);
 static void help_button (GtkWidget *, gpointer);
+static GtkWidget *popup_menu (int x, int y);
 static gboolean tv_button (GtkWidget *wid, GdkEventButton event, gpointer);
+static void gesture_pressed (GtkGestureLongPress *, gdouble x, gdouble y, gpointer);
+static void gesture_end (GtkGestureLongPress *, GdkEventSequence *, gpointer);
 static void tv_cursor (GtkTreeView *tv, gpointer);
 static void edit_item (GtkWidget *, gpointer);
 static void delete_item (GtkWidget *, gpointer);
@@ -915,41 +920,73 @@ static void help_button (GtkWidget *, gpointer)
     system ("xdg-open https://labwc.github.io/labwc-actions.5.html &");
 }
 
-static gboolean tv_button (GtkWidget *wid, GdkEventButton event, gpointer)
+static GtkWidget *popup_menu (int x, int y)
 {
     GtkWidget *menu, *item;
     GtkTreeIter iter;
     GtkTreePath *path;
 
+    if (gtk_tree_view_get_path_at_pos (GTK_TREE_VIEW (tv), x, y, &path, NULL, NULL, NULL))
+    {
+        gtk_tree_model_get_iter (bind_sort, &iter, path);
+        gtk_tree_model_sort_convert_iter_to_child_iter (GTK_TREE_MODEL_SORT (bind_sort), &miter, &iter);
+        gtk_tree_path_free (path);
+
+        menu = gtk_menu_new ();
+
+        item = gtk_menu_item_new_with_label (_("New..."));
+        g_signal_connect (item, "activate", G_CALLBACK (new_button), NULL);
+        gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
+
+        item = gtk_menu_item_new_with_label (_("Edit..."));
+        g_signal_connect (item, "activate", G_CALLBACK (edit_item), NULL);
+        gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
+
+        item = gtk_menu_item_new_with_label (_("Delete"));
+        g_signal_connect (item, "activate", G_CALLBACK (delete_item), NULL);
+        gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
+
+        gtk_widget_show_all (menu);
+    }
+    else menu = NULL;
+
+    return menu;
+}
+
+static gboolean tv_button (GtkWidget *wid, GdkEventButton event, gpointer)
+{
+    GtkWidget *menu;
+
     if (event.type == GDK_BUTTON_PRESS && event.button == 3)
     {
-        if (gtk_tree_view_get_path_at_pos (GTK_TREE_VIEW (tv), event.x, event.y, &path, NULL, NULL, NULL))
-        {
-            gtk_tree_model_get_iter (bind_sort, &iter, path);
-            gtk_tree_model_sort_convert_iter_to_child_iter (GTK_TREE_MODEL_SORT (bind_sort), &miter, &iter);
-            gtk_tree_path_free (path);
+        menu = popup_menu (event.x, event.y);
+        gtk_menu_popup_at_pointer (GTK_MENU (menu), gtk_get_current_event ());
 
-            menu = gtk_menu_new ();
-
-            item = gtk_menu_item_new_with_label (_("New..."));
-            g_signal_connect (item, "activate", G_CALLBACK (new_button), NULL);
-            gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
-
-            item = gtk_menu_item_new_with_label (_("Edit..."));
-            g_signal_connect (item, "activate", G_CALLBACK (edit_item), NULL);
-            gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
-
-            item = gtk_menu_item_new_with_label (_("Delete"));
-            g_signal_connect (item, "activate", G_CALLBACK (delete_item), NULL);
-            gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
-
-            gtk_widget_show_all (menu);
-            gtk_menu_popup_at_pointer (GTK_MENU (menu), gtk_get_current_event ());
-
-            return TRUE;
-        }
+        return FALSE;
     }
     return FALSE;
+}
+
+static void gesture_pressed (GtkGestureLongPress *, gdouble x, gdouble y, gpointer)
+{
+    pressed = TRUE;
+    press_x = x;
+    press_y = y;
+}
+
+static void gesture_end (GtkGestureLongPress *, GdkEventSequence *, gpointer)
+{
+    GtkWidget *menu;
+    int x, y;
+
+    if (pressed)
+    {
+        gtk_tree_view_convert_widget_to_bin_window_coords (GTK_TREE_VIEW (tv), press_x, press_y, &x, &y);
+        menu = popup_menu (x, y);
+        GdkRectangle rect = {press_x, press_y, 0, 0};
+        gtk_menu_popup_at_rect (GTK_MENU (menu), gtk_widget_get_window (tv), &rect, GDK_GRAVITY_CENTER, GDK_GRAVITY_NORTH_WEST, NULL);
+    }
+    pressed = FALSE;
 }
 
 static void tv_cursor (GtkTreeView *tv, gpointer)
@@ -1030,6 +1067,7 @@ static void conf_cancel (GtkButton *, gpointer)
 static void init_config (void)
 {
     GtkCellRenderer *trend;
+    GtkGesture *gesture;
     char *user_file;
     int i;
 
@@ -1065,6 +1103,13 @@ static void init_config (void)
     g_signal_connect (editbtn, "clicked", G_CALLBACK (edit_button), NULL);
     g_signal_connect (delbtn, "clicked", G_CALLBACK (delete_button), NULL);
     g_signal_connect (hlpbtn, "clicked", G_CALLBACK (help_button), NULL);
+
+    gesture = gtk_gesture_long_press_new (tv);
+    gtk_gesture_single_set_touch_only (GTK_GESTURE_SINGLE (gesture), FALSE);
+    g_signal_connect (gesture, "pressed", G_CALLBACK (gesture_pressed), NULL);
+    g_signal_connect (gesture, "end", G_CALLBACK (gesture_end), NULL);
+    gtk_event_controller_set_propagation_phase (GTK_EVENT_CONTROLLER (gesture), GTK_PHASE_TARGET);
+    pressed = FALSE;
 
     actions = gtk_list_store_new (1, G_TYPE_STRING);
     for (i = 1; action_names[i]; i++) gtk_list_store_insert_with_values (actions, NULL, -1, 0, action_names[i], -1);
