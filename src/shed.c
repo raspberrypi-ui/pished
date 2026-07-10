@@ -320,9 +320,9 @@ static void read_xml (const char *file)
                     for (j = 0; j < xpathObj3->nodesetval->nodeNr; j++)
                     {
                         node = xpathObj3->nodesetval->nodeTab[j];
-                        if (!xmlStrcmp (node->name, XC ("name")))
+                        if (act == NULL && !xmlStrcmp (node->name, XC ("name")))
                             act = g_strdup ((char *) xmlNodeGetContent (node));
-                        if (match_field (node->name))
+                        if (name == NULL && match_field (node->name))
                         {
                             name = g_strdup ((char *) node->name);
                             param = g_strdup ((char *) xmlNodeGetContent (node));
