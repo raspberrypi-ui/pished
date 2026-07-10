@@ -285,6 +285,7 @@ static void read_xml (const char *file)
     {
         for (i = 0; i < xpathObj->nodesetval->nodeNr; i++)
         {
+            key = NULL;
             act = NULL;
             name = NULL;
             param = NULL;
