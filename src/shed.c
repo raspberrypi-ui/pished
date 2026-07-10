@@ -201,6 +201,7 @@ static char *app_id;
 
 static void check_directory (const char *path);
 static void read_xml (const char *file);
+static gboolean match_field (const xmlChar *val);
 static void read_defaults (void);
 static char *decamel (const char *in);
 static void add_or_replace (GtkListStore *ls, const char *key, const char *act, const char *name, const char *param, gboolean rel);
@@ -255,13 +256,13 @@ static void check_directory (const char *path)
 static void read_xml (const char *file)
 {
     xmlDocPtr xDoc;
-    xmlXPathObjectPtr xpathObj, xpathObj2;
+    xmlXPathObjectPtr xpathObj, xpathObj2, xpathObj3;
     xmlXPathContextPtr xpathCtx;
     xmlNode *node;
     xmlAttr *attr, *attr2;
     char *key, *act, *name, *param;
     gboolean rel;
-    int i;
+    int i, j;
 
     // read in data from XML file
     xmlInitParser ();
@@ -305,14 +306,30 @@ static void read_xml (const char *file)
                 {
                     if (!xmlStrcmp (attr2->name, XC ("name")))
                         act = g_strdup ((char *) attr2->children->content);
-                    if (!xmlStrcmp (attr2->name, XC ("command")) || !xmlStrcmp (attr2->name, XC ("direction"))
-                        || !xmlStrcmp (attr2->name, XC ("menu")) || !xmlStrcmp (attr2->name, XC ("decorations"))
-                        || !xmlStrcmp (attr2->name, XC ("region")) || !xmlStrcmp (attr2->name, XC ("policy")))
+                    if (match_field (attr2->name))
                     {
                         name = g_strdup ((char *) attr2->name);
                         param = g_strdup ((char *) attr2->children->content);
                     }
                 }
+
+                node = xpathObj2->nodesetval->nodeTab[0];
+                xpathObj3 = xmlXPathNodeEval (node, XC ("./o:*"), xpathCtx);
+                if (!xmlXPathNodeSetIsEmpty (xpathObj3->nodesetval))
+                {
+                    for (j = 0; j < xpathObj3->nodesetval->nodeNr; j++)
+                    {
+                        node = xpathObj3->nodesetval->nodeTab[j];
+                        if (!xmlStrcmp (node->name, XC ("name")))
+                            act = g_strdup ((char *) xmlNodeGetContent (node));
+                        if (match_field (node->name))
+                        {
+                            name = g_strdup ((char *) node->name);
+                            param = g_strdup ((char *) xmlNodeGetContent (node));
+                        }
+                    }
+                }
+                xmlXPathFreeObject (xpathObj3);
             }
             xmlXPathFreeObject (xpathObj2);
 
@@ -330,6 +347,18 @@ static void read_xml (const char *file)
     xmlXPathFreeContext (xpathCtx);
     xmlFreeDoc (xDoc);
     xmlCleanupParser ();
+}
+
+static gboolean match_field (const xmlChar *val)
+{
+    if (!xmlStrcmp (val, XC ("command"))
+        || !xmlStrcmp (val, XC ("direction"))
+        || !xmlStrcmp (val, XC ("menu"))
+        || !xmlStrcmp (val, XC ("decorations"))
+        || !xmlStrcmp (val, XC ("region"))
+        || !xmlStrcmp (val, XC ("policy")))
+        return TRUE;
+    else return FALSE;
 }
 
 static void read_defaults (void)
