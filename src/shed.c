@@ -201,6 +201,7 @@ static char *app_id;
 
 static void check_directory (const char *path);
 static void read_xml (const char *file);
+static gboolean is_true (const xmlChar *val);
 static gboolean match_field (const xmlChar *val);
 static void read_defaults (void);
 static char *decamel (const char *in);
@@ -297,7 +298,7 @@ static void read_xml (const char *file)
             {
                 if (!xmlStrcmp (attr->name, XC ("key")))
                     key = g_strdup ((char *) attr->children->content);
-                if (!xmlStrcmp (attr->name, XC ("onRelease")) && !xmlStrcmp (attr->children->content, XC ("yes"))) rel = TRUE;
+                if (!xmlStrcmp (attr->name, XC ("onRelease")) && is_true (attr->children->content)) rel = TRUE;
             }
             xpathObj2 = xmlXPathNodeEval (node, XC ("./o:action"), xpathCtx);
             if (!xmlXPathNodeSetIsEmpty (xpathObj2->nodesetval))
@@ -347,6 +348,16 @@ static void read_xml (const char *file)
     xmlXPathFreeContext (xpathCtx);
     xmlFreeDoc (xDoc);
     xmlCleanupParser ();
+}
+
+static gboolean is_true (const xmlChar *val)
+{
+    if (!xmlStrcmp (val, XC ("yes"))
+        || !xmlStrcmp (val, XC ("true"))
+        || !xmlStrcmp (val, XC ("on"))
+        || !xmlStrcmp (val, XC ("1")))
+        return TRUE;
+    else return FALSE;
 }
 
 static gboolean match_field (const xmlChar *val)
