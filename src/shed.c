@@ -48,8 +48,8 @@ extern const char *dgetfixt (const char *domain, const char *msgctxid);
 
 typedef enum {
     WM_OPENBOX,
-    WM_LABWC } 
-wm_type;
+    WM_LABWC
+} wm_type;
 
 #define XC(str) ((xmlChar *) str)
 
