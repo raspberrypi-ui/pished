@@ -898,11 +898,6 @@ static void show_keystring (guint keycode, guint mods)
 {
     char buf[64], *ptr = buf;
 
-    if (mods & GDK_SHIFT_MASK && keycode != XKB_KEY_Shift_L && keycode != XKB_KEY_Shift_R)
-    {
-        sprintf (ptr, "S-");
-        ptr += 2;
-    }
     if (mods & GDK_CONTROL_MASK && keycode != XKB_KEY_Control_L && keycode != XKB_KEY_Control_R)
     {
         sprintf (ptr, "C-");
@@ -913,14 +908,19 @@ static void show_keystring (guint keycode, guint mods)
         sprintf (ptr, "A-");
         ptr += 2;
     }
-    if (mods & GDK_MOD3_MASK && keycode != XKB_KEY_Hyper_L && keycode != XKB_KEY_Hyper_R)
+    if (mods & GDK_SHIFT_MASK && keycode != XKB_KEY_Shift_L && keycode != XKB_KEY_Shift_R)
     {
-        sprintf (ptr, "H-");
+        sprintf (ptr, "S-");
         ptr += 2;
     }
     if (mods & GDK_MOD4_MASK && keycode != XKB_KEY_Super_L && keycode != XKB_KEY_Super_R)
     {
         sprintf (ptr, "W-");
+        ptr += 2;
+    }
+    if (mods & GDK_MOD3_MASK && keycode != XKB_KEY_Hyper_L && keycode != XKB_KEY_Hyper_R)
+    {
+        sprintf (ptr, "H-");
         ptr += 2;
     }
     if (mods & GDK_MOD5_MASK && keycode != XKB_KEY_Meta_L && keycode != XKB_KEY_Meta_R)
