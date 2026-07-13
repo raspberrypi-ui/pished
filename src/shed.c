@@ -62,6 +62,7 @@ wm_type;
 #define KB_ARG      3
 #define KB_REL      4
 #define KB_LABEL    5
+#define KB_KEYLAB   6
 
 /*----------------------------------------------------------------------------*/
 /* Global data                                                                */
@@ -194,6 +195,7 @@ static gboolean keylog = FALSE;
 static gboolean pressed;
 static double press_x, press_y;
 static char *app_id;
+static char *rawkey;
 
 /*----------------------------------------------------------------------------*/
 /* Prototypes                                                                 */
@@ -219,6 +221,7 @@ static void param_changed (GtkEditable *, gpointer);
 static gboolean keypress (GtkWidget *, GdkEventKey *event, gpointer);
 static gboolean keyrel (GtkWidget *, GdkEventKey *event, gpointer);
 static void show_keystring (guint keycode, guint mods);
+static char *expand_keystring (const char *in);
 static void new_button (GtkWidget *, gpointer);
 static void edit_button (GtkWidget *, gpointer);
 static void delete_button (GtkWidget *, gpointer);
@@ -405,7 +408,7 @@ static void add_or_replace (GtkListStore *ls, const char *key, const char *act, 
 {
     GtkTreeIter iter;
     gboolean valid;
-    char *str, *lbl, *desc = NULL;
+    char *str, *lbl, *desc = NULL, *klab;
 
     // look for a preset which matches this action if it is an Execute, and use it as the description
     if (!g_strcmp0 (act, "Execute") && !g_strcmp0 (name, "command") && param)
@@ -454,10 +457,13 @@ static void add_or_replace (GtkListStore *ls, const char *key, const char *act, 
         valid = gtk_tree_model_iter_next (GTK_TREE_MODEL (bindings), &iter);
     }
 
+    klab = expand_keystring (key);
+
     if (act)
         gtk_list_store_insert_with_values (bindings, NULL, -1, KB_KEY, key, KB_ACTION, act, KB_NAME, name,
-            KB_ARG, param, KB_REL, rel, KB_LABEL, desc, -1);
+            KB_ARG, param, KB_REL, rel, KB_LABEL, desc, KB_KEYLAB, klab, -1);
 
+    g_free (klab);
     g_free (desc);
 }
 
@@ -592,11 +598,15 @@ static void show_editor (char *key, char *act, char *name, char *param, gboolean
 
     if (key)
     {
-        gtk_label_set_text (GTK_LABEL (keylabel), key);
+        rawkey = g_strdup (key);
+        str = expand_keystring (key);
+        gtk_label_set_text (GTK_LABEL (keylabel), str);
+        g_free (str);
         gtk_widget_hide (keyentry);
     }
     else
     {
+        rawkey = NULL;
         g_signal_connect (keyentry, "key-press-event", G_CALLBACK (keypress), NULL);
         g_signal_connect (keyentry, "key-release-event", G_CALLBACK (keyrel), NULL);
         gtk_widget_hide (keylabel);
@@ -709,13 +719,10 @@ static void init_combo (GtkComboBox *cb, const char *init)
 
 static void edit_ok (GtkWidget *, gpointer)
 {
-    const char *key, *param;
+    const char *param;
     char *act, *name;
     gboolean rel;
     GtkTreeIter iter;
-
-    if (gtk_widget_is_visible (keyentry)) key = gtk_entry_get_text (GTK_ENTRY (keyentry));
-    else key = gtk_label_get_text (GTK_LABEL (keylabel));
 
     rel = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (relchk));
 
@@ -742,7 +749,7 @@ static void edit_ok (GtkWidget *, gpointer)
         param = NULL;
     }
 
-    write_xml (key, act, name, param, rel);
+    write_xml (rawkey, act, name, param, rel);
 
     g_free (act);
     g_free (name);
@@ -925,7 +932,57 @@ static void show_keystring (guint keycode, guint mods)
     xkb_keysym_get_name (keycode, ptr, sizeof (buf) - (ptr - buf));
     if (*(ptr + 1) == 0) *ptr = g_ascii_tolower (*ptr);  // labwc wants lower-case single letters
 
-    gtk_entry_set_text (GTK_ENTRY (keyentry), buf);
+    g_free (rawkey);
+    rawkey = g_strdup (buf);
+
+    ptr = expand_keystring (buf);
+    gtk_entry_set_text (GTK_ENTRY (keyentry), ptr);
+    g_free (ptr);
+}
+
+static char *expand_keystring (const char *in)
+{
+    char buf[128], *optr = buf;
+    const char *iptr = in;
+
+    while (*iptr)
+    {
+        if (*(iptr + 1) == '-')
+        {
+            switch (*iptr)
+            {
+                case 'S' :  sprintf (optr, "Shift-");
+                            optr += 6;
+                            iptr += 2;
+                            break;
+                case 'C' :  sprintf (optr, "Ctrl-");
+                            optr += 5;
+                            iptr += 2;
+                            break;
+                case 'A' :  sprintf (optr, "Alt-");
+                            optr += 4;
+                            iptr += 2;
+                            break;
+                case 'H' :  sprintf (optr, "Hyper-");
+                            optr += 6;
+                            iptr += 2;
+                            break;
+                case 'W' :  sprintf (optr, "Win-");
+                            optr += 4;
+                            iptr += 2;
+                            break;
+                case 'M' :  sprintf (optr, "Meta-");
+                            optr += 5;
+                            iptr += 2;
+                            break;
+                default :   *optr++ = *iptr++;
+                            break;
+            }
+        }
+        else *optr++ = *iptr++;
+    }
+    *optr = 0;
+    return g_strdup (buf);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1127,7 +1184,7 @@ static void init_config (void)
     char *user_file;
     int i;
 
-    bindings = gtk_list_store_new (6, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_BOOLEAN, G_TYPE_STRING);
+    bindings = gtk_list_store_new (7, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_BOOLEAN, G_TYPE_STRING, G_TYPE_STRING);
     bind_sort = gtk_tree_model_sort_new_with_model (GTK_TREE_MODEL (bindings));
     gtk_tree_sortable_set_sort_column_id (GTK_TREE_SORTABLE (bind_sort), 0, GTK_SORT_ASCENDING);
 
@@ -1143,7 +1200,7 @@ static void init_config (void)
 
     trend = gtk_cell_renderer_text_new ();
 
-    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (tv), -1, _("Key"), trend, "text", KB_KEY, NULL);
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (tv), -1, _("Key"), trend, "text", KB_KEYLAB, NULL);
     gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (tv), -1, _("Function"), trend, "text", KB_LABEL, NULL);
 
     for (i = 0; i < 2; i++)
