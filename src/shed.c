@@ -941,8 +941,7 @@ static void show_keystring (guint keycode, guint mods)
 
 static char *expand_keystring (const char *in)
 {
-    char buf[128], *optr = buf;
-    const char *iptr = in;
+    char buf[128], *optr = buf, *iptr = (char *) in;
 
     while (*iptr)
     {
@@ -981,6 +980,15 @@ static char *expand_keystring (const char *in)
         else *optr++ = *iptr++;
     }
     *optr = 0;
+
+    iptr = strstr (buf, "XF86");
+    if (iptr)
+    {
+        optr = decamel (iptr + 4);
+        strcpy (iptr, optr);
+        g_free (optr);
+    }
+
     return g_strdup (buf);
 }
 
@@ -1185,7 +1193,7 @@ static void init_config (void)
 
     bindings = gtk_list_store_new (7, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_BOOLEAN, G_TYPE_STRING, G_TYPE_STRING);
     bind_sort = gtk_tree_model_sort_new_with_model (GTK_TREE_MODEL (bindings));
-    gtk_tree_sortable_set_sort_column_id (GTK_TREE_SORTABLE (bind_sort), 0, GTK_SORT_ASCENDING);
+    gtk_tree_sortable_set_sort_column_id (GTK_TREE_SORTABLE (bind_sort), KB_KEYLAB, GTK_SORT_ASCENDING);
 
     tv = (GtkWidget *) gtk_builder_get_object (builder, "shortcuts_tv");
     newbtn = (GtkWidget *) gtk_builder_get_object (builder, "new_btn");
@@ -1206,7 +1214,7 @@ static void init_config (void)
     {
         gtk_tree_view_column_set_resizable (gtk_tree_view_get_column (GTK_TREE_VIEW (tv), i), TRUE);
         gtk_tree_view_column_set_sizing (gtk_tree_view_get_column (GTK_TREE_VIEW (tv), i), GTK_TREE_VIEW_COLUMN_GROW_ONLY);
-        gtk_tree_view_column_set_sort_column_id (gtk_tree_view_get_column (GTK_TREE_VIEW (tv), i), i == 0 ? KB_KEY : KB_LABEL);
+        gtk_tree_view_column_set_sort_column_id (gtk_tree_view_get_column (GTK_TREE_VIEW (tv), i), i == 0 ? KB_KEYLAB : KB_LABEL);
     }
 
     g_signal_connect (tv, "button-press-event", G_CALLBACK (tv_button), NULL);
