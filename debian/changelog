@@ -1,3 +1,9 @@
+pished (0.2) trixie; urgency=medium
+
+  * Add wildcard menu shortcut
+
+ -- Simon Long <simon@raspberrypi.com>  Fri, 31 Jul 2026 10:45:27 +0100
+
 pished (0.1) trixie; urgency=low
 
   * Initial release
