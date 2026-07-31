@@ -53,7 +53,7 @@ typedef enum {
 
 #define XC(str) ((xmlChar *) str)
 
-#define NPRESETS 14
+#define NPRESETS 15
 
 #define KB_KEY      0
 #define KB_ACTION   1
@@ -168,10 +168,11 @@ const char *pres[NPRESETS * 2] = {
     N_("Volume Increase"),          "wfpanelctl volumepulse volu",
     N_("Volume Decrease"),          "wfpanelctl volumepulse vold",
     N_("Volume Mute"),              "wfpanelctl volumepulse mute",
+    N_("Show Launcher"),            "wfpanelctl ?menu menu",
     N_("Show Main Menu"),           "wfpanelctl smenu menu",
+    N_("Show Icon Menu"),           "wfpanelctl nmenu menu",
     N_("Show Network Menu"),        "wfpanelctl netman menu",
     N_("Show Bluetooth Menu"),      "wfpanelctl bluetooth menu",
-    N_("Show Icon Launcher"),       "wfpanelctl nmenu menu",
     N_("Capture Entire Screen"),    "gui-screenshot",
     N_("Capture Part of Screen"),   "gui-screenshot -a",
     N_("Run Command"),              "gui-runcmd",
