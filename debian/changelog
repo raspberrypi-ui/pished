@@ -1,3 +1,9 @@
+pished (0.3) trixie; urgency=medium
+
+  * Version bump for build
+
+ -- Simon Long <simon@raspberrypi.com>  Wed, 02 Sep 2026 13:22:48 +0100
+
 pished (0.2) trixie; urgency=medium
 
   * Add wildcard menu shortcut
