@@ -20,14 +20,7 @@ static struct key_combos {
 		.action = "Execute",
 		.attributes[0] = {
 			.name = "command",
-			.value = "alacritty",
-		},
-	}, {
-		.binding = "A-F3",
-		.action = "Execute",
-		.attributes[0] = {
-			.name = "command",
-			.value = "bemenu-run",
+			.value = "lab-sensible-terminal",
 		},
 	}, {
 		.binding = "A-F4",
@@ -36,39 +29,18 @@ static struct key_combos {
 		.binding = "W-a",
 		.action = "ToggleMaximize",
 	}, {
-		.binding = "A-Left",
-		.action = "MoveToEdge",
-		.attributes[0] = {
-			.name = "direction",
-			.value = "left",
-		},
-	}, {
-		.binding = "A-Right",
-		.action = "MoveToEdge",
-		.attributes[0] = {
-			.name = "direction",
-			.value = "right",
-		},
-	}, {
-		.binding = "A-Up",
-		.action = "MoveToEdge",
-		.attributes[0] = {
-			.name = "direction",
-			.value = "up",
-		},
-	}, {
-		.binding = "A-Down",
-		.action = "MoveToEdge",
-		.attributes[0] = {
-			.name = "direction",
-			.value = "down",
-		},
+		.binding = "W-d",
+		.action = "ToggleShowDesktop",
 	}, {
 		.binding = "W-Left",
 		.action = "SnapToEdge",
 		.attributes[0] = {
 			.name = "direction",
 			.value = "left",
+		},
+		.attributes[1] = {
+			.name = "combine",
+			.value = "yes",
 		},
 	}, {
 		.binding = "W-Right",
@@ -77,12 +49,20 @@ static struct key_combos {
 			.name = "direction",
 			.value = "right",
 		},
+		.attributes[1] = {
+			.name = "combine",
+			.value = "yes",
+		},
 	}, {
 		.binding = "W-Up",
 		.action = "SnapToEdge",
 		.attributes[0] = {
 			.name = "direction",
 			.value = "up",
+		},
+		.attributes[1] = {
+			.name = "combine",
+			.value = "yes",
 		},
 	}, {
 		.binding = "W-Down",
@@ -91,8 +71,12 @@ static struct key_combos {
 			.name = "direction",
 			.value = "down",
 		},
+		.attributes[1] = {
+			.name = "combine",
+			.value = "yes",
+		},
 	}, {
-		.binding = "A-space",
+		.binding = "A-Space",
 		.action = "ShowMenu",
 		.attributes[0] = {
 			.name = "menu",
@@ -107,21 +91,21 @@ static struct key_combos {
 		.action = "Execute",
 		.attributes[0] = {
 			.name = "command",
-			.value = "amixer sset Master 5%-",
+			.value = "pactl set-sink-volume @DEFAULT_SINK@ -5%",
 		},
 	}, {
 		.binding = "XF86AudioRaiseVolume",
 		.action = "Execute",
 		.attributes[0] = {
 			.name = "command",
-			.value = "amixer sset Master 5%+",
+			.value = "pactl set-sink-volume @DEFAULT_SINK@ +5%",
 		},
 	}, {
 		.binding = "XF86AudioMute",
 		.action = "Execute",
 		.attributes[0] = {
 			.name = "command",
-			.value = "amixer sset Master toggle",
+			.value = "pactl set-sink-mute @DEFAULT_SINK@ toggle",
 		},
 	}, {
 		.binding = "XF86MonBrightnessUp",
@@ -160,14 +144,14 @@ static struct key_combos {
  * <mouse>
  *   <context name="Maximize">
  *     <mousebind button="Left" action="Click">
- *       <action name="Focus"/>
- *       <action name="Raise"/>
- *       <action name="ToggleMaximize"/>
+ *       <action name="Focus" />
+ *       <action name="Raise" />
+ *       <action name="ToggleMaximize" />
  *     </mousebind>
  *   </context>
  *   <context name="Root">
  *     <mousebind direction="Up" action="Scroll">
- *       <action name="GoToDesktop" to="left" wrap="yes"/>
+ *       <action name="GoToDesktop" to="left" wrap="yes" />
  *     </mousebind>
  *   </context>
  * </mouse>
@@ -178,73 +162,48 @@ static struct mouse_combos {
 		const char *name, *value;
 	} attributes[2];
 } mouse_combos[] = { {
-		.context = "Left",
+		.context = "Border",
 		.button = "Left",
-		.event = "Drag",
-		.action = "Resize",
+		.event = "Press",
+		.action = "Focus",
 	}, {
-		.context = "Top",
+		.context = "Border",
 		.button = "Left",
-		.event = "Drag",
-		.action = "Resize",
+		.event = "Press",
+		.action = "Raise",
 	}, {
-		.context = "Bottom",
-		.button = "Left",
-		.event = "Drag",
-		.action = "Resize",
-	}, {
-		.context = "Right",
-		.button = "Left",
-		.event = "Drag",
-		.action = "Resize",
-	}, {
-		.context = "TLCorner",
-		.button = "Left",
-		.event = "Drag",
-		.action = "Resize",
-	}, {
-		.context = "TRCorner",
-		.button = "Left",
-		.event = "Drag",
-		.action = "Resize",
-	}, {
-		.context = "BRCorner",
-		.button = "Left",
-		.event = "Drag",
-		.action = "Resize",
-	}, {
-		.context = "BLCorner",
+		.context = "Border",
 		.button = "Left",
 		.event = "Drag",
 		.action = "Resize",
 	}, {
 		.context = "Frame",
-		.button = "A-Left",
+		.button = "W-Left",
 		.event = "Press",
 		.action = "Focus",
 	}, {
 		.context = "Frame",
-		.button = "A-Left",
+		.button = "W-Left",
 		.event = "Press",
 		.action = "Raise",
 	}, {
 		.context = "Frame",
-		.button = "A-Left",
+		.button = "W-Left",
 		.event = "Drag",
 		.action = "Move",
 	}, {
 		.context = "Frame",
-		.button = "A-Right",
+		.button = "W-Right",
 		.event = "Press",
 		.action = "Focus",
 	}, {
 		.context = "Frame",
-		.button = "A-Right",
+		.button = "W-Right",
 		.event = "Press",
 		.action = "Raise",
 	}, {
 		.context = "Frame",
-		.button = "A-Right",
+		.button = "W-Right",
 		.event = "Drag",
 		.action = "Resize",
 	}, {

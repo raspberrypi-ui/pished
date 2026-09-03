@@ -179,7 +179,7 @@ const char *pres[NPRESETS * 2] = {
     N_("Install Screen Reader"),    "gui-pkinst orca reboot",
     N_("Show Shutdown Options"),    "pishutdown",
     N_("Lock Screen"),              "swaylock -p",
-    N_("Open Terminal"),            "lxterminal"
+    N_("Open Terminal"),            "lab-sensible-terminal"
 };
 
 /* Flag to indicate window manager in use */
@@ -989,6 +989,10 @@ static char *expand_keystring (const char *in)
         strcpy (iptr, optr);
         g_free (optr);
     }
+
+    // xkb reports 'space', but the default config includes 'Space'...
+    iptr = strstr (buf, "Space");
+    if (iptr) *iptr = 's';
 
     return g_strdup (buf);
 }
