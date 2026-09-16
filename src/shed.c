@@ -38,13 +38,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /* Typedefs and macros                                                        */
 /*----------------------------------------------------------------------------*/
 
-#ifdef PLUGIN_NAME
 extern const char *dgetfixt (const char *domain, const char *msgctxid);
 #undef _
 #define _(a) dgettext(GETTEXT_PACKAGE,a)
 #undef C_
 #define C_(a,b) dgetfixt(GETTEXT_PACKAGE,a"\004"b)
-#endif
 
 typedef enum {
     WM_OPENBOX,
@@ -1323,13 +1321,14 @@ GtkWidget *get_tab (int tab)
 {
     GtkWidget *window, *plugin;
 
-    window = (GtkWidget *) gtk_builder_get_object (builder, "main_window");
     switch (tab)
     {
         case 0 :
+            window = (GtkWidget *) gtk_builder_get_object (builder, "main_window");
             plugin = (GtkWidget *) gtk_builder_get_object (builder, "vbox");
             break;
         default :
+            window = NULL;
             plugin = NULL;
     }
 
