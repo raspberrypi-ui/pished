@@ -297,6 +297,7 @@ static void read_xml (const char *file)
             node = xpathObj->nodesetval->nodeTab[i];
             for (attr = node->properties; attr; attr = attr->next)
             {
+                if (!attr->children || !attr->children->content) continue;
                 if (!xmlStrcmp (attr->name, XC ("key")))
                     key = g_strdup ((char *) attr->children->content);
                 if (!xmlStrcmp (attr->name, XC ("onRelease")) && is_true (attr->children->content)) rel = TRUE;
@@ -306,6 +307,7 @@ static void read_xml (const char *file)
             {
                 for (attr2 = xpathObj2->nodesetval->nodeTab[0]->properties; attr2; attr2 = attr2->next)
                 {
+                    if (!attr2->children || !attr2->children->content) continue;
                     if (!xmlStrcmp (attr2->name, XC ("name")))
                         act = g_strdup ((char *) attr2->children->content);
                     if (match_field (attr2->name))

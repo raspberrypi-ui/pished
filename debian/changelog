@@ -1,3 +1,9 @@
+pished (0.5) trixie; urgency=medium
+
+  * Minor robustness fixes for init
+
+ -- Simon Long <simon@raspberrypi.com>  Thu, 17 Sep 2026 15:56:17 +0100
+
 pished (0.4) trixie; urgency=medium
 
   * Update defaults for labwc 0.20
