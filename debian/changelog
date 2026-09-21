@@ -1,3 +1,9 @@
+pished (0.6) trixie; urgency=medium
+
+  * Remove standalone build
+
+ -- Simon Long <simon@raspberrypi.com>  Mon, 21 Sep 2026 11:56:06 +0100
+
 pished (0.5) trixie; urgency=medium
 
   * Minor robustness fixes for init
