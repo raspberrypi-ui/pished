@@ -1267,6 +1267,11 @@ static void init_config (void)
     g_free (user_file);
 }
 
+void reload_shortcuts (void)
+{
+    reload_bindings ();
+}
+
 /*----------------------------------------------------------------------------*/
 /* Plugin interface                                                           */
 /*----------------------------------------------------------------------------*/

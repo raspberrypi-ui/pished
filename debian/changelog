@@ -1,3 +1,9 @@
+pished (0.7) trixie; urgency=medium
+
+  * Add external function to reload shortcuts
+
+ -- Simon Long <simon@raspberrypi.com>  Thu, 24 Sep 2026 15:36:25 +0100
+
 pished (0.6) trixie; urgency=medium
 
   * Remove standalone build
