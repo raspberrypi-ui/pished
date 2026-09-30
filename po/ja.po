@@ -1,0 +1,160 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the rpcc_pished package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: rpcc_pished\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-22 12:04+0900\n"
+"PO-Revision-Date: 2026-09-22 12:07+0900\n"
+"Last-Translator: Akira Ouchi <akkiesoft@marokun.net>\n"
+"Language-Team: \n"
+"Language: ja\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.6\n"
+
+#: src/shed.c:166
+msgid "Volume Increase"
+msgstr "ボリュームを上げる"
+
+#: src/shed.c:167
+msgid "Volume Decrease"
+msgstr "ボリュームを下げる"
+
+#: src/shed.c:168
+msgid "Volume Mute"
+msgstr "ボリュームをミュートにする"
+
+#: src/shed.c:169
+msgid "Show Launcher"
+msgstr "ランチャーを表示する"
+
+#: src/shed.c:170
+msgid "Show Main Menu"
+msgstr "メインメニューを表示する"
+
+#: src/shed.c:171
+msgid "Show Icon Menu"
+msgstr "アイコンメニューを表示する"
+
+#: src/shed.c:172
+msgid "Show Network Menu"
+msgstr "ネットワークメニューを表示する"
+
+#: src/shed.c:173
+msgid "Show Bluetooth Menu"
+msgstr "Bluetoothメニューを表示する"
+
+#: src/shed.c:174
+msgid "Capture Entire Screen"
+msgstr "画面全体をキャプチャーする"
+
+#: src/shed.c:175
+msgid "Capture Part of Screen"
+msgstr "画面の一部をキャプチャーする"
+
+#: src/shed.c:176
+msgid "Run Command"
+msgstr "コマンドを実行する"
+
+#: src/shed.c:177
+msgid "Install Screen Reader"
+msgstr "スクリーンリーダーをインストールする"
+
+#: src/shed.c:178
+msgid "Show Shutdown Options"
+msgstr "シャットダウンオプションを表示する"
+
+#: src/shed.c:179
+msgid "Lock Screen"
+msgstr "画面をロックする"
+
+#: src/shed.c:180
+msgid "Open Terminal"
+msgstr "ターミナルを開く"
+
+#: src/shed.c:1062
+msgid "New..."
+msgstr "新規..."
+
+#: src/shed.c:1066
+msgid "Edit..."
+msgstr "編集..."
+
+#: src/shed.c:1070
+msgid "Delete"
+msgstr "削除"
+
+#: src/shed.c:1215
+msgid "Key"
+msgstr "キー"
+
+#: src/shed.c:1216
+msgid "Function"
+msgstr "機能"
+
+#: src/shed.c:1300
+msgctxt "tab"
+msgid "Shortcuts"
+msgstr "ショートカット"
+
+#: src/shed.c:1301
+msgid "No such tab"
+msgstr "そのようなタブはありません"
+
+#: data/shed.ui:51
+msgid "_New..."
+msgstr "新規(_N)"
+
+#: data/shed.ui:65
+msgid "_Edit..."
+msgstr "編集(_E)"
+
+#: data/shed.ui:79
+msgid "_Delete"
+msgstr "削除(_D)"
+
+#: data/shed.ui:93
+msgid "_Help..."
+msgstr "ヘルプ(_H)..."
+
+#: data/shed.ui:143
+msgid "Are you sure you want to delete this keybinding?"
+msgstr "本当にキーバインディングを削除しますか？"
+
+#: data/shed.ui:160
+msgid "_Cancel"
+msgstr "キャンセル(_C)"
+
+#: data/shed.ui:175
+msgid "_OK"
+msgstr "_OK"
+
+#: data/shed.ui:200 data/shed.ui:206
+msgid "Edit Shortcut"
+msgstr "ショートカットの編集"
+
+#: data/shed.ui:225
+msgid "Key:"
+msgstr "キー:"
+
+#: data/shed.ui:317
+msgid "Activate on Release"
+msgstr "離した時に作動"
+
+#: data/shed.ui:346
+msgid "Preset:"
+msgstr "プリセット:"
+
+#: data/shed.ui:383
+msgid "Action:"
+msgstr "アクション:"
+
+#: data/shed.ui:420
+msgid "Parameter:"
+msgstr "パラメーター:"
