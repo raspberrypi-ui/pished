@@ -1,3 +1,9 @@
+pished (0.8) trixie; urgency=medium
+
+  * Handle default direction parameter for maxmimize operations
+
+ -- Simon Long <simon@raspberrypi.com>  Thu, 08 Oct 2026 11:42:20 +0100
+
 pished (0.7) trixie; urgency=medium
 
   * Add external function to reload shortcuts

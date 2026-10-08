@@ -410,6 +410,12 @@ static void add_or_replace (GtkListStore *ls, const char *key, const char *act, 
     gboolean valid;
     char *str, *lbl, *desc = NULL, *klab;
 
+    if (strstr (act, "Maximize") && !param)
+    {
+        param = "both";
+        name = "Direction";
+    }
+
     // look for a preset which matches this action if it is an Execute, and use it as the description
     if (!g_strcmp0 (act, "Execute") && !g_strcmp0 (name, "command") && param)
     {
