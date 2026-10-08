@@ -410,6 +410,8 @@ static void add_or_replace (GtkListStore *ls, const char *key, const char *act, 
     gboolean valid;
     char *str, *lbl, *desc = NULL, *klab;
 
+    if (!key || !act) return;
+
     // handle unspecified defaults
     if (strstr (act, "Maximize") && !param)
     {

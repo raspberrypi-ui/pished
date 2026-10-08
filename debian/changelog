@@ -1,3 +1,9 @@
+pished (0.10) trixie; urgency=medium
+
+  * Ignore shortcuts with no action
+
+ -- Simon Long <simon@raspberrypi.com>  Thu, 08 Oct 2026 17:51:15 +0100
+
 pished (0.9) trixie; urgency=medium
 
   * Add another default
