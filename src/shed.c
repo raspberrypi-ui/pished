@@ -410,10 +410,16 @@ static void add_or_replace (GtkListStore *ls, const char *key, const char *act, 
     gboolean valid;
     char *str, *lbl, *desc = NULL, *klab;
 
+    // handle unspecified defaults
     if (strstr (act, "Maximize") && !param)
     {
         param = "both";
         name = "Direction";
+    }
+    if (strstr (act, "AutoPlace") && !param)
+    {
+        param = "automatic";
+        name = "Policy";
     }
 
     // look for a preset which matches this action if it is an Execute, and use it as the description

@@ -1,3 +1,9 @@
+pished (0.9) trixie; urgency=medium
+
+  * Add another default
+
+ -- Simon Long <simon@raspberrypi.com>  Thu, 08 Oct 2026 11:48:34 +0100
+
 pished (0.8) trixie; urgency=medium
 
   * Handle default direction parameter for maxmimize operations
